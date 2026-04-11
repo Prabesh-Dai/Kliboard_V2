@@ -1,0 +1,67 @@
+import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { hash } from "bcryptjs";
+import { createSpaceSchema } from "@/lib/schemas/space.schema";
+import { createClient } from "@/lib/supabase/server";
+import { writeRateLimiter } from "@/lib/rate-limit";
+import { addMinutes } from "date-fns";
+
+export async function POST(request: Request) {
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for") ?? "anonymous";
+  const { success } = await writeRateLimiter.limit(ip);
+
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  const body = await request.json();
+  const parsed = createSpaceSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validation failed", issues: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const { name, content, duration, password } = parsed.data;
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let passwordHash: string | null = null;
+  if (password) {
+    passwordHash = await hash(password, 10);
+  }
+
+  const expiresAt = addMinutes(new Date(), duration).toISOString();
+  const normalizedName = name.toLowerCase();
+
+  const { data, error } = await supabase
+    .from("spaces")
+    .insert({
+      name: normalizedName,
+      content,
+      duration,
+      expires_at: expiresAt,
+      password_hash: passwordHash,
+      owner_id: user?.id ?? null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      return NextResponse.json(
+        { error: "A space with this name already exists" },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data, { status: 201 });
+}

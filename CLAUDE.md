@@ -50,6 +50,9 @@ middleware.ts         # Next.js middleware (auth session refresh)
 
 ## Code Rules
 
+### Never Commit Automatically
+Never create git commits unless the user explicitly asks. No auto-commits, no committing as part of tool initialization, no committing after completing a task.
+
 ### Minimal Comments
 Do not write comments in code unless absolutely necessary. No routine inline comments, no block comments describing obvious logic, no JSDoc on every function, no TODO comments. Only add a comment when the logic is genuinely non-obvious and cannot be clarified through better naming or structure.
 
