@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useSpaceFiles } from "@/hooks/use-file-upload";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -269,19 +268,7 @@ export function FileList({
   }
 
   if (isLoading && !pendingFiles.length) {
-    return (
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex flex-col overflow-hidden rounded-lg">
-            <Skeleton className="aspect-square" />
-            <div className="space-y-1.5 p-3">
-              <Skeleton className="h-3 w-3/4" />
-              <Skeleton className="h-2 w-1/2" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+    return null;
   }
 
   if (!items.length) {
@@ -369,7 +356,7 @@ export function FileList({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {items.map((item, index) => {
         if (item.kind === "pending") {
           const { id, file, previewUrl } = item.data;
@@ -389,7 +376,7 @@ export function FileList({
                   </p>
                 </div>
               )}
-              <div className="relative aspect-square">
+              <div className="relative aspect-square overflow-hidden">
                 {isImage ? (
                   <img
                     src={previewUrl}
@@ -410,11 +397,11 @@ export function FileList({
                   </button>
                 )}
               </div>
-              <div className="flex flex-col gap-1 p-3">
+              <div className="relative p-3">
                 <p className="truncate font-heading text-xs font-medium">
                   {file.name}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
                   {formatFileSize(file.size)} &middot; {uploading ? "uploading" : "pending"}
                 </p>
               </div>

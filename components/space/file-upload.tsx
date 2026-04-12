@@ -54,10 +54,10 @@ export function FileUpload({ onFilesSelected, maxFiles }: FileUploadProps) {
         setDragging(true);
       }}
       onDragLeave={() => setDragging(false)}
-      className={`flex flex-1 flex-col items-center justify-center rounded-lg bg-surface-container-low p-10 text-center ring-1 transition-colors ${
+      className={`flex flex-1 flex-col items-center justify-center rounded-lg bg-surface-container-low p-10 text-center border border-dashed transition-colors ${
         dragging
-          ? "ring-primary/40 bg-primary/5"
-          : "ring-ghost-border"
+          ? "border-primary/40 bg-primary/5"
+          : "border-ghost-border"
       }`}
     >
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container-high">
@@ -66,15 +66,13 @@ export function FileUpload({ onFilesSelected, maxFiles }: FileUploadProps) {
       <p className="font-heading text-sm font-medium">Upload Files</p>
       <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
         Drag and drop your assets here
-        <br />
-        or click to browse files
       </p>
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
         className="mt-5 cursor-pointer rounded-md px-5 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
       >
-        Select Files
+        Browse Files
       </button>
       <input
         ref={inputRef}

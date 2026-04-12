@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createSpaceSchema } from "@/lib/schemas/space.schema";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { writeRateLimiter } from "@/lib/rate-limit";
 import { addMinutes } from "date-fns";
 
@@ -51,11 +52,36 @@ export async function POST(request: Request) {
 
   if (error) {
     if (error.code === "23505") {
-      const { error: deleteError } = await supabase
+      const admin = createAdminClient();
+      const { data: existing } = await admin
+        .from("spaces")
+        .select("id")
+        .eq("name", normalizedName)
+        .lt("expires_at", new Date().toISOString())
+        .single();
+
+      if (!existing) {
+        return NextResponse.json(
+          { error: "A space with this name already exists" },
+          { status: 409 }
+        );
+      }
+
+      const { data: files } = await admin
+        .from("files")
+        .select("storage_path")
+        .eq("space_id", existing.id);
+
+      if (files?.length) {
+        await admin.storage
+          .from("space-files")
+          .remove(files.map((f) => f.storage_path));
+      }
+
+      const { error: deleteError } = await admin
         .from("spaces")
         .delete()
-        .eq("name", normalizedName)
-        .lt("expires_at", new Date().toISOString());
+        .eq("id", existing.id);
 
       if (deleteError) {
         return NextResponse.json(

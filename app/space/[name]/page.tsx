@@ -71,6 +71,19 @@ export default function SpacePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const statusTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const nameRef = useRef<HTMLHeadingElement>(null);
+  const [nameClipped, setNameClipped] = useState(false);
+  const [nameExpanded, setNameExpanded] = useState(false);
+
+  useEffect(() => {
+    const el = nameRef.current;
+    if (!el) return;
+    const measure = () => setNameClipped(el.scrollWidth > el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [name, isLoading]);
   const countdown = useCountdown(space?.expires_at);
 
   function showStatus(text: string) {
@@ -277,7 +290,7 @@ export default function SpacePage() {
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-8 w-16 rounded-md" />
           </div>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex flex-col overflow-hidden rounded-lg">
                 <Skeleton className="aspect-square" />
@@ -307,8 +320,8 @@ export default function SpacePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
-      <div className="mb-10 flex items-center justify-between">
-        <div>
+      <div className="mb-10 flex items-start justify-between gap-4">
+        <div className="relative min-w-0 pt-2">
           {user && space ? (
             canToggleLock ? (
               <button
@@ -317,12 +330,12 @@ export default function SpacePage() {
                 className="flex cursor-pointer items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLocked ? <Lock className="h-2.5 w-2.5" /> : <LockOpen className="h-2.5 w-2.5" />}
-                {isLocked ? "Locked Space" : "Unlocked Space"}
+                {isLocked ? "Locked" : "Unlocked"}<span className="hidden sm:inline">&nbsp;Space</span>
               </button>
             ) : (
               <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 {isLocked ? <Lock className="h-2.5 w-2.5" /> : <LockOpen className="h-2.5 w-2.5" />}
-                {isLocked ? "Locked Space" : "Unlocked Space"}
+                {isLocked ? "Locked" : "Unlocked"}<span className="hidden sm:inline">&nbsp;Space</span>
               </p>
             )
           ) : (
@@ -330,11 +343,20 @@ export default function SpacePage() {
               Space
             </p>
           )}
-          <h1 className="font-heading text-3xl font-medium tracking-tight">
+          <h1
+            ref={nameRef}
+            onClick={() => nameClipped && setNameExpanded((v) => !v)}
+            className={`truncate font-heading text-3xl font-medium tracking-tight ${nameClipped ? "cursor-pointer" : ""}`}
+          >
             {decodeURIComponent(name)}
           </h1>
+          {nameClipped && nameExpanded && (
+            <p className="absolute left-0 z-10 mt-1 w-full break-all rounded-md bg-surface-container-high px-3 py-2 text-sm text-foreground shadow-md">
+              {decodeURIComponent(name)}
+            </p>
+          )}
         </div>
-        <div className="flex items-stretch overflow-hidden rounded-lg bg-surface-container-low">
+        <div className="flex shrink-0 items-stretch overflow-hidden rounded-lg bg-surface-container-low">
           <DeletionCountdown
             countdown={countdown}
             isSaved={Boolean(space)}
@@ -364,32 +386,34 @@ export default function SpacePage() {
                   {statusText}
                 </span>
               )}
-              <div className="flex items-center">
-                <div className={`flex items-center gap-3 overflow-hidden transition-all duration-200 ease-out ${menuOpen ? "max-w-48 mr-1 opacity-100" : "pointer-events-none max-w-0 opacity-0"}`}>
-                  {content && (
-                    <button
-                      onClick={() => { handleCopy(); setMenuOpen(false); }}
-                      className="mr-1 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      Copy
-                    </button>
-                  )}
-                  {space && (
-                    <button
-                      onClick={() => { handleSync(); setMenuOpen(false); }}
-                      className="mr-1 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      Sync
-                    </button>
-                  )}
+              {(content || space) && (
+                <div className="flex items-center">
+                  <div className={`flex items-center gap-3 overflow-hidden transition-all duration-200 ease-out ${menuOpen ? "max-w-48 mr-1 opacity-100" : "pointer-events-none max-w-0 opacity-0"}`}>
+                    {content && (
+                      <button
+                        onClick={() => { handleCopy(); setMenuOpen(false); }}
+                        className="mr-1 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Copy
+                      </button>
+                    )}
+                    {space && (
+                      <button
+                        onClick={() => { handleSync(); setMenuOpen(false); }}
+                        className="mr-1 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Sync
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setMenuOpen((v) => !v)}
+                    className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
+                  >
+                    <EllipsisVertical className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setMenuOpen((v) => !v)}
-                  className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
-                >
-                  <EllipsisVertical className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              )}
             </div>
           </div>
           <Textarea
@@ -404,7 +428,7 @@ export default function SpacePage() {
             {!user && isNewSpace && (
               <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                 <Info className="h-3 w-3 shrink-0" />
-                Space will be read-only after saving
+                Space will be read-only<span className="hidden sm:inline">&nbsp;after saving</span>
               </p>
             )}
             {batchUpload.isPending && batchUpload.progress.total > 0 && (
@@ -429,8 +453,8 @@ export default function SpacePage() {
                 {isSaving
                   ? "saving..."
                   : isNewSpace
-                    ? "Save Space \u2192"
-                    : "Update Space \u2192"}
+                    ? <>{`Save`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>
+                    : <>{`Update`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>}
               </button>
             </div>
           </div>

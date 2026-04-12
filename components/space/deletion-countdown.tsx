@@ -46,25 +46,29 @@ export function DeletionCountdown({
       className={`flex items-stretch gap-2 px-4 py-2 transition-colors ${interactive ? "cursor-pointer hover:bg-surface-container-high/50" : ""}`}
       onClick={() => interactive && setPickerOpen((v) => !v)}
     >
-      <div className="flex flex-col justify-center">
-        <p className="text-[8px] uppercase tracking-[0.2em] text-muted-foreground transition-opacity duration-300">
-          {showDuration ? "selected duration" : "time until deletion"}
+      <div className="flex flex-col">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-opacity duration-300">
+          {showDuration ? (
+            <><span className="sm:hidden">duration</span><span className="hidden sm:inline">selected duration</span></>
+          ) : (
+            <><span className="sm:hidden">expires in</span><span className="hidden sm:inline">time until deletion</span></>
+          )}
         </p>
-        <div className="relative h-7 overflow-hidden">
+        <div className="grid h-7 overflow-hidden">
           <p
-            className={`font-heading text-lg font-medium text-primary transition-transform duration-300 ease-out ${showDuration ? "-translate-y-full" : "translate-y-0"}`}
+            className={`col-start-1 row-start-1 font-heading text-lg font-medium text-primary transition-transform duration-300 ease-out ${showDuration ? "-translate-y-full" : "translate-y-0"}`}
           >
             {countdown}
           </p>
           <p
-            className={`absolute inset-x-0 top-full font-heading text-lg font-medium text-primary transition-transform duration-300 ease-out ${showDuration ? "-translate-y-full" : "translate-y-0"}`}
+            className={`col-start-1 row-start-1 font-heading text-lg font-medium text-primary transition-transform duration-300 ease-out ${showDuration ? "translate-y-0" : "translate-y-full"}`}
           >
             {durationLabel}
           </p>
         </div>
       </div>
       {onDurationChange && (
-        <>
+        <div className="flex items-stretch gap-2" onClick={(e) => e.stopPropagation()}>
           <span className="w-px bg-ghost-border" />
           <DurationPicker
             value={duration}
@@ -73,7 +77,7 @@ export function DeletionCountdown({
             onOpenChange={setPickerOpen}
             iconOnly
           />
-        </>
+        </div>
       )}
     </div>
   );

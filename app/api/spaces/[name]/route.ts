@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { addMinutes } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { updateSpaceSchema } from "@/lib/schemas/space.schema";
 import { readRateLimiter, updateRateLimiter } from "@/lib/rate-limit";
 
@@ -31,17 +32,19 @@ export async function GET(
   }
 
   if (new Date(space.expires_at) < new Date()) {
-    await supabase.from("spaces").delete().eq("id", space.id);
-    const { data: files } = await supabase
+    const admin = createAdminClient();
+    const { data: files } = await admin
       .from("files")
       .select("storage_path")
       .eq("space_id", space.id);
 
     if (files?.length) {
-      await supabase.storage
+      await admin.storage
         .from("space-files")
         .remove(files.map((f) => f.storage_path));
     }
+
+    await admin.from("spaces").delete().eq("id", space.id);
     return NextResponse.json({ error: "Space expired" }, { status: 404 });
   }
 
@@ -157,18 +160,19 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: files } = await supabase
+  const admin = createAdminClient();
+  const { data: files } = await admin
     .from("files")
     .select("storage_path")
     .eq("space_id", space.id);
 
   if (files?.length) {
-    await supabase.storage
+    await admin.storage
       .from("space-files")
       .remove(files.map((f) => f.storage_path));
   }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("spaces")
     .delete()
     .eq("id", space.id);

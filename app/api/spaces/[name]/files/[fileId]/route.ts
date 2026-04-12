@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function DELETE(
   _request: Request,
@@ -41,7 +42,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Space is locked" }, { status: 403 });
   }
 
-  const { data: deleted, error } = await supabase
+  const admin = createAdminClient();
+  const { data: deleted, error } = await admin
     .from("files")
     .delete()
     .eq("id", file.id)
@@ -52,7 +54,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
   }
 
-  await supabase.storage.from("space-files").remove([file.storage_path]);
+  await admin.storage.from("space-files").remove([file.storage_path]);
 
   return NextResponse.json({ deleted: true });
 }
