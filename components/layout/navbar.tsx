@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clipboard, LogIn, LayoutDashboard, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +10,7 @@ import { useRouter } from "next/navigation";
 export function Navbar() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   async function handleLogout() {
     const supabase = createClient();
@@ -23,34 +23,53 @@ export function Navbar() {
     router.refresh();
   }
 
-  return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <Clipboard className="h-5 w-5" />
-          Kliboard
-        </Link>
+  const spaceMatch = pathname.match(/^\/space\/(.+)$/);
+  const spaceName = spaceMatch?.[1];
 
-        <div className="flex items-center gap-2">
+  return (
+    <header className="sticky top-0 z-50 w-full bg-background">
+      <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-4">
+        {spaceName ? (
+          <div className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+            <Link href="/" className="text-primary hover:underline">
+              kliboard
+            </Link>
+            <span>&gt;</span>
+            <span>Space</span>
+            <span>&gt;</span>
+            <span className="text-foreground">{decodeURIComponent(spaceName)}</span>
+          </div>
+        ) : (
+          <Link href="/" className="font-mono text-sm font-bold text-primary">
+            kliboard
+          </Link>
+        )}
+        <div className="flex items-center gap-5">
+          {!loading && user && (
+            <Link
+              href="/dashboard"
+              className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              spaces
+            </Link>
+          )}
           <ThemeToggle />
           {!loading && (
             <>
               {user ? (
-                <>
-                  <Button variant="ghost" size="sm" render={<Link href="/dashboard" />}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </Button>
-                </>
+                <button
+                  onClick={handleLogout}
+                  className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  logout
+                </button>
               ) : (
-                <Button variant="ghost" size="sm" render={<Link href="/login" />}>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Login
-                </Button>
+                <Link
+                  href="/login"
+                  className="font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  login
+                </Link>
               )}
             </>
           )}

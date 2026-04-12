@@ -1,23 +1,22 @@
 import { SpaceEditor } from "@/components/space/space-editor";
 import { RecentSpacesGrid } from "@/components/shared/recent-spaces-grid";
-import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">Kliboard</h1>
-        <p className="mt-2 text-muted-foreground">
-          Temporary text clipboard. Create, share, auto-expire.
-        </p>
-      </div>
+    <div className="flex min-h-[calc(100vh-7rem)] flex-col items-center justify-center px-4">
+      <h1 className="mb-2 text-center text-4xl font-extralight tracking-wide sm:text-5xl">
+        enter a space name
+      </h1>
+      <p className="mb-12 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+        temporary, anonymous storage
+      </p>
 
       <SpaceEditor />
 
-      <Separator className="my-10" />
-
-      <div>
-        <h2 className="mb-4 text-lg font-semibold">Recent Spaces</h2>
+      <div className="mt-24 w-full max-w-3xl">
+        <p className="mb-6 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+          recently visited
+        </p>
         <RecentSpacesGrid />
       </div>
     </div>

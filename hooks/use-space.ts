@@ -55,8 +55,8 @@ export function useCreateSpace() {
   return useMutation({
     mutationFn: async (data: {
       name: string;
-      content: string;
-      duration: number;
+      content?: string;
+      duration?: number;
       password?: string;
     }) => {
       const res = await fetch("/api/spaces", {
@@ -80,7 +80,7 @@ export function useUpdateSpace(name: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { content?: string; duration?: number }) => {
+    mutationFn: async (data: { content?: string; duration?: number; password?: string }) => {
       const res = await fetch(`/api/spaces/${name}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

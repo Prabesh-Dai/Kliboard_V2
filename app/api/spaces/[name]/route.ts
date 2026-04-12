@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { addMinutes } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { updateSpaceSchema } from "@/lib/schemas/space.schema";
@@ -96,6 +96,8 @@ export async function PATCH(
     content?: string;
     duration?: number;
     expires_at?: string;
+    password_hash?: string;
+    is_private?: boolean;
   } = {};
   if (parsed.data.content !== undefined) {
     updateData.content = parsed.data.content;
@@ -106,6 +108,10 @@ export async function PATCH(
       new Date(),
       parsed.data.duration
     ).toISOString();
+  }
+  if (parsed.data.password) {
+    updateData.password_hash = await hash(parsed.data.password, 10);
+    updateData.is_private = true;
   }
 
   const { data, error } = await supabase

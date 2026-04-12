@@ -24,10 +24,13 @@ export const createSpaceSchema = z.object({
   name: spaceNameSchema,
   content: z
     .string()
-    .min(1, "Content is required")
-    .max(MAX_CONTENT_LENGTH, "Content too long"),
+    .max(MAX_CONTENT_LENGTH, "Content too long")
+    .optional()
+    .default(""),
   duration: z
     .number()
+    .optional()
+    .default(5)
     .refine((v) => DURATION_VALUES.includes(v as number), "Invalid duration"),
   password: z
     .string()
@@ -36,11 +39,12 @@ export const createSpaceSchema = z.object({
 });
 
 export const updateSpaceSchema = z.object({
-  content: z.string().min(1).max(MAX_CONTENT_LENGTH).optional(),
+  content: z.string().max(MAX_CONTENT_LENGTH).optional(),
   duration: z
     .number()
     .refine((v) => DURATION_VALUES.includes(v as number))
     .optional(),
+  password: z.string().min(4).optional(),
 });
 
 export type CreateSpaceInput = z.infer<typeof createSpaceSchema>;

@@ -48,6 +48,7 @@ export async function POST(request: Request) {
       duration,
       expires_at: expiresAt,
       password_hash: passwordHash,
+      is_private: Boolean(passwordHash),
       owner_id: user?.id ?? null,
     })
     .select()

@@ -54,14 +54,11 @@ export function FileUpload({ spaceName, spaceId }: FileUploadProps) {
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onClick={() => inputRef.current?.click()}
-      className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 p-8 text-center transition-colors hover:border-muted-foreground/50"
+      className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-border bg-card p-8 text-center transition-colors hover:bg-secondary"
     >
-      <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-      <p className="text-sm text-muted-foreground">
-        {isPending ? "Uploading..." : "Drop files here or click to upload"}
-      </p>
-      <p className="mt-1 text-xs text-muted-foreground/70">
-        Images, PDFs, text files up to 10MB
+      <Upload className="mb-3 h-6 w-6 text-muted-foreground" />
+      <p className="font-mono text-xs text-muted-foreground">
+        {isPending ? "Uploading..." : "Drag and drop documents or images"}
       </p>
       <input
         ref={inputRef}

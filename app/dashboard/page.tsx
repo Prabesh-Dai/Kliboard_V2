@@ -77,7 +77,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">My Spaces</h1>
+      <h1 className="mb-6 font-mono text-2xl font-bold">My Spaces</h1>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -99,7 +99,7 @@ export default function DashboardPage() {
             return (
               <div
                 key={space.id}
-                className="flex items-center justify-between rounded-lg border p-4"
+                className="group flex items-center justify-between rounded-lg border border-border/50 p-4 transition-all duration-200 hover:border-primary/20 hover:shadow-[0_0_15px_var(--glow-color)]"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

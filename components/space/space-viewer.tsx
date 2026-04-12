@@ -26,7 +26,7 @@ interface SpaceViewerProps {
 export function SpaceViewer({ space }: SpaceViewerProps) {
   const [content, setContent] = useState(space.content);
   const [duration, setDuration] = useState(space.duration);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!space.content);
   const updateSpace = useUpdateSpace(space.name);
 
   const hasChanges = content !== space.content || duration !== space.duration;
@@ -85,6 +85,7 @@ export function SpaceViewer({ space }: SpaceViewerProps) {
             <Label>Content</Label>
             <Textarea
               className="min-h-[300px] font-mono"
+              placeholder="Paste your text here..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
@@ -97,7 +98,7 @@ export function SpaceViewer({ space }: SpaceViewerProps) {
             <div className="flex gap-2">
               <Button
                 onClick={handleSave}
-                disabled={!hasChanges || updateSpace.isPending}
+                disabled={!hasChanges || !content.trim() || updateSpace.isPending}
               >
                 <Save className="mr-2 h-4 w-4" />
                 {updateSpace.isPending ? "Saving..." : "Save"}
@@ -116,7 +117,7 @@ export function SpaceViewer({ space }: SpaceViewerProps) {
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card p-4 font-mono text-sm whitespace-pre-wrap break-words">
+        <div className="rounded-lg border border-primary/10 bg-card/80 p-6 font-mono text-sm whitespace-pre-wrap break-words backdrop-blur-sm">
           <LinkDetector text={space.content} />
         </div>
       )}
