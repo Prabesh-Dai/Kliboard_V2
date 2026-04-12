@@ -36,8 +36,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { FileUpload } from "@/components/space/file-upload";
 import { FileList } from "@/components/space/file-list";
 import type { PendingFile } from "@/components/space/file-list";
+import { MarkdownRenderer } from "@/components/space/markdown-renderer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DeletionCountdown } from "@/components/space/deletion-countdown";
 import { MAX_FILES_PER_SPACE } from "@/lib/constants";
 import {
@@ -49,7 +56,26 @@ import {
   LockOpen,
   Info,
   NotebookPen,
+  Download,
+  X,
 } from "lucide-react";
+
+const MD_PATTERNS = [
+  /^#{1,6}\s/m,
+  /\*\*.+?\*\*/,
+  /\[.+?\]\(.+?\)/,
+  /^[-*+]\s/m,
+  /^\d+\.\s/m,
+  /^```/m,
+  /^>\s/m,
+  /^---$/m,
+  /!\[.*?\]\(.*?\)/,
+  /\|.+\|.+\|/,
+];
+
+function hasMarkdown(text: string): boolean {
+  return MD_PATTERNS.filter((p) => p.test(text)).length >= 2;
+}
 
 export default function SpacePage() {
   const { name } = useParams<{ name: string }>();
@@ -75,6 +101,7 @@ export default function SpacePage() {
   const nameRef = useRef<HTMLHeadingElement>(null);
   const [nameClipped, setNameClipped] = useState(false);
   const [nameExpanded, setNameExpanded] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     const el = nameRef.current;
@@ -184,6 +211,38 @@ export default function SpacePage() {
       toast.error(msg);
     }
   }
+
+  function handleDownloadMd() {
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${space?.name ?? name}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleDownloadPdf() {
+    const el = document.getElementById("md-preview-print");
+    if (!el) {
+      toast.error("Open preview first to download as PDF");
+      return;
+    }
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Popup blocked — allow popups to download as PDF");
+      return;
+    }
+    const title = space?.name ?? decodeURIComponent(name);
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#1c1c1c;line-height:1.6}h1,h2,h3,h4,h5,h6{margin-top:1.5em;margin-bottom:0.5em}pre{background:#f5f5f4;padding:1rem;border-radius:4px;overflow-x:auto}code{background:#f5f5f4;padding:0.15em 0.4em;border-radius:3px;font-size:0.9em}pre code{background:none;padding:0}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:1rem;color:#666}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:0.5rem;text-align:left}img{max-width:100%}@media print{body{margin:0;padding:0}}</style></head><body>${el.innerHTML}</body></html>`);
+    printWindow.document.close();
+    printWindow.addEventListener("load", () => {
+      printWindow.print();
+      printWindow.close();
+    });
+  }
+
+  const contentIsMarkdown = hasMarkdown(content);
 
   function handleSaveClick() {
     if (!canSave || !hasChanges) return;
@@ -369,7 +428,7 @@ export default function SpacePage() {
 
       <div className="mb-10 grid gap-5 lg:grid-cols-[1fr_320px]">
         <div
-          className="relative flex flex-col gap-2 rounded-lg bg-surface-container-low p-6 ring-1 ring-ghost-border transition-shadow focus-within:ring-primary/30"
+          className="relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-lg bg-surface-container-low p-6 ring-1 ring-ghost-border transition-shadow focus-within:ring-primary/30"
           onClick={(e) => {
             if (canModify && !(e.target as HTMLElement).closest("button")) {
               textareaRef.current?.focus();
@@ -379,10 +438,10 @@ export default function SpacePage() {
           <div className="mb-1.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <NotebookPen className="h-3.5 w-3.5 text-muted-foreground" />
-              <p className="font-heading text-sm font-medium">Add Note</p>
+              <p className="font-heading text-sm font-medium"><span className="hidden sm:inline">Add </span>Note</p>
             </div>
             <div className="flex items-center gap-2">
-              {statusText && (
+              {statusText && !menuOpen && (
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {statusText}
                 </span>
@@ -390,6 +449,14 @@ export default function SpacePage() {
               {(content || space) && (
                 <div className="flex items-center">
                   <div className={`flex items-center gap-3 overflow-hidden transition-all duration-200 ease-out ${menuOpen ? "max-w-48 mr-1 opacity-100" : "pointer-events-none max-w-0 opacity-0"}`}>
+                    {content && contentIsMarkdown && (
+                      <button
+                        onClick={() => { setPreviewOpen(true); setMenuOpen(false); }}
+                        className="mr-1 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Preview
+                      </button>
+                    )}
                     {content && (
                       <button
                         onClick={() => { handleCopy(); setMenuOpen(false); }}
@@ -528,6 +595,37 @@ export default function SpacePage() {
         </div>
       }
 
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent showCloseButton={false} className="sm:max-w-3xl max-h-[85vh] flex flex-col">
+          <div className="flex items-center justify-between gap-4">
+            <DialogTitle>{space?.name ?? decodeURIComponent(name)}</DialogTitle>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDownloadMd}
+                className="flex cursor-pointer items-center gap-1.5 rounded-md bg-surface-container px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-surface-container-low hover:text-foreground"
+              >
+                <Download className="h-3 w-3" />
+                .md
+              </button>
+              <button
+                onClick={handleDownloadPdf}
+                className="flex cursor-pointer items-center gap-1.5 rounded-md bg-surface-container px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-surface-container-low hover:text-foreground"
+              >
+                <Download className="h-3 w-3" />
+                .pdf
+              </button>
+              <DialogClose
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </DialogClose>
+            </div>
+          </div>
+          <div id="md-preview-print" className="flex-1 overflow-y-auto pr-2">
+            <MarkdownRenderer content={content} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

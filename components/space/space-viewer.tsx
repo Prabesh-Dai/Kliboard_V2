@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { DurationPicker } from "@/components/space/duration-picker";
-import { LinkDetector } from "@/components/shared/link-detector";
+import { MarkdownRenderer } from "@/components/space/markdown-renderer";
 import { useUpdateSpace } from "@/hooks/use-space";
 import { Copy, Save, Clock } from "lucide-react";
 
@@ -117,8 +117,8 @@ export function SpaceViewer({ space }: SpaceViewerProps) {
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-primary/10 bg-card/80 p-6 font-mono text-sm whitespace-pre-wrap break-words backdrop-blur-sm">
-          <LinkDetector text={space.content} />
+        <div className="rounded-lg border border-primary/10 bg-card/80 p-6 backdrop-blur-sm">
+          <MarkdownRenderer content={space.content} className="font-mono text-sm" />
         </div>
       )}
     </div>
