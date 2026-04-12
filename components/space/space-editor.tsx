@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { spaceNameSchema } from "@/lib/schemas/space.schema";
+import { CircleAlert } from "lucide-react";
 
 export function SpaceEditor() {
   const [name, setName] = useState("");
@@ -47,9 +48,10 @@ export function SpaceEditor() {
           enter space
         </button>
       </form>
-      {nameError && (
-        <p className="mt-2 text-xs text-destructive">{nameError}</p>
-      )}
+      <p className={`mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] text-destructive ${nameError ? "visible" : "invisible"}`}>
+        <CircleAlert className="h-3 w-3 shrink-0" />
+        {nameError || "\u00A0"}
+      </p>
     </div>
   );
 }

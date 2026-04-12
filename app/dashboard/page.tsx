@@ -101,7 +101,7 @@ export default function DashboardPage() {
       ) : !spaces?.length ? (
         <div className="py-16 text-center">
           <p className="text-muted-foreground">You haven&apos;t created any spaces yet.</p>
-          <Button className="mt-6" render={<Link href="/" />}>
+          <Button className="mt-6" nativeButton={false} render={<Link href="/" />}>
             Create a Space
           </Button>
         </div>
@@ -146,7 +146,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="ml-4 flex shrink-0 gap-1">
-                  <Button variant="ghost" size="icon" render={<Link href={`/space/${space.name}`} />}>
+                  <Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/space/${space.name}`} />}>
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                   <Button

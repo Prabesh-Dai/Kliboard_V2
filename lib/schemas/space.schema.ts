@@ -13,7 +13,7 @@ export const spaceNameSchema = z
   .max(SPACE_NAME_MAX, "Name must be at most 24 characters")
   .regex(
     /^[a-zA-Z][a-zA-Z-]*[a-zA-Z]$/,
-    "Only letters and hyphens allowed, must start and end with a letter"
+    "Only letters and hyphens allowed"
   )
   .refine(
     (name) => !RESERVED_NAMES.includes(name.toLowerCase()),
