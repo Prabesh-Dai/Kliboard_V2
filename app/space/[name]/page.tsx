@@ -48,6 +48,7 @@ import {
   Lock,
   LockOpen,
   Info,
+  NotebookPen,
 } from "lucide-react";
 
 export default function SpacePage() {
@@ -368,7 +369,7 @@ export default function SpacePage() {
 
       <div className="mb-10 grid gap-5 lg:grid-cols-[1fr_320px]">
         <div
-          className="flex flex-col gap-2 rounded-lg bg-surface-container-low p-6 ring-1 ring-ghost-border transition-shadow focus-within:ring-primary/30"
+          className="relative flex flex-col gap-2 rounded-lg bg-surface-container-low p-6 ring-1 ring-ghost-border transition-shadow focus-within:ring-primary/30"
           onClick={(e) => {
             if (canModify && !(e.target as HTMLElement).closest("button")) {
               textareaRef.current?.focus();
@@ -377,7 +378,7 @@ export default function SpacePage() {
         >
           <div className="mb-1.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <NotepadText className="h-3.5 w-3.5 text-muted-foreground" />
+              <NotebookPen className="h-3.5 w-3.5 text-muted-foreground" />
               <p className="font-heading text-sm font-medium">Add Note</p>
             </div>
             <div className="flex items-center gap-2">
@@ -418,25 +419,27 @@ export default function SpacePage() {
           </div>
           <Textarea
             ref={textareaRef}
-            className="h-48 resize-none border-0 bg-transparent px-0 py-0 font-mono text-sm shadow-none field-sizing-fixed overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
+            className="h-48 resize-none border-0 bg-transparent px-0 py-0 font-heading text-sm shadow-none field-sizing-fixed overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
             placeholder="Start typing here..."
             value={content}
             onChange={(e) => canModify && setContent(e.target.value)}
             readOnly={!canModify}
           />
-          <div className="mt-5 flex items-center justify-between">
-            {!user && isNewSpace && (
-              <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <Info className="h-3 w-3 shrink-0" />
-                Space will be read-only<span className="hidden sm:inline">&nbsp;after saving</span>
-              </p>
-            )}
-            {batchUpload.isPending && batchUpload.progress.total > 0 && (
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Uploading {batchUpload.progress.completed}/{batchUpload.progress.total} files
-              </p>
-            )}
-            <div className="relative ml-auto">
+          {batchUpload.isPending && batchUpload.progress.total > 0 && (
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Uploading {batchUpload.progress.completed}/{batchUpload.progress.total} files
+            </p>
+          )}
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              {(!user && isNewSpace) && (
+                <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <Info className="h-3 w-3 shrink-0" />
+                  Space will be read-only<span className="hidden sm:inline">&nbsp;after saving</span>
+                </p>
+              )}
+            </div>
+            <div className="relative shrink-0">
               {!canModify && !isNewSpace && (
                 <div className="absolute -inset-px z-10 flex items-center justify-center gap-1.5 rounded-sm bg-surface-container-low/90">
                   <Lock className="h-3 w-3 text-muted-foreground" />
@@ -448,13 +451,15 @@ export default function SpacePage() {
               <button
                 onClick={handleSaveClick}
                 disabled={!canModify || !canSave || !hasChanges || isSaving}
-                className="cursor-pointer rounded-sm bg-linear-to-br from-primary to-primary-container px-7 py-3 text-xs font-medium uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-10 cursor-pointer items-center justify-center rounded-sm bg-linear-to-br from-primary to-primary-container px-4 text-primary-foreground shadow-md hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {isSaving
-                  ? "saving..."
-                  : isNewSpace
-                    ? <>{`Save`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>
-                    : <>{`Update`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>}
+                <span className="whitespace-nowrap text-xs font-medium uppercase tracking-widest">
+                  {isSaving
+                    ? "saving..."
+                    : isNewSpace
+                      ? <>{`Save`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>
+                      : <>{`Update`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>}
+                </span>
               </button>
             </div>
           </div>
@@ -487,7 +492,7 @@ export default function SpacePage() {
         </div>
       </div>
 
-      {(Boolean(space) || hasPendingFiles) && (
+      {
         <div>
           <div className="mb-5 flex items-center justify-between">
             <p className="font-heading text-lg font-medium">Stored Items</p>
@@ -521,7 +526,7 @@ export default function SpacePage() {
             uploading={batchUpload.isPending}
           />
         </div>
-      )}
+      }
 
     </div>
   );

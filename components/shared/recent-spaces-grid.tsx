@@ -87,7 +87,13 @@ export function RecentSpacesGrid() {
     );
   }
 
-  if (error || !spaces?.length) return null;
+  if (error || !spaces?.length) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">No recently visited spaces</p>
+      </div>
+    );
+  }
 
   const hasMore = spaces.length > GRID_LIMIT;
 

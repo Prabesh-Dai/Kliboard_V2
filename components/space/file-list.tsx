@@ -274,7 +274,8 @@ export function FileList({
   if (!items.length) {
     return (
       <div className="py-10 text-center">
-        <p className="text-sm text-muted-foreground">No files uploaded yet</p>
+        <p className="font-heading text-sm text-muted-foreground">Nothing yet</p>
+        <p className="mt-1 text-xs text-muted-foreground/60">Previews will appear here</p>
       </div>
     );
   }
@@ -376,7 +377,7 @@ export function FileList({
                   </p>
                 </div>
               )}
-              <div className="relative aspect-square overflow-hidden">
+              <div className="relative aspect-4/3 overflow-hidden">
                 {isImage ? (
                   <img
                     src={previewUrl}
@@ -430,7 +431,7 @@ export function FileList({
               <div className="pointer-events-none absolute inset-0 z-10 bg-black/0 transition-colors group-hover:bg-black/10" />
             )}
             <div
-              className={`relative aspect-square overflow-hidden ${isDeleting ? "pointer-events-none" : "cursor-pointer"}`}
+              className={`relative aspect-4/3 overflow-hidden ${isDeleting ? "pointer-events-none" : "cursor-pointer"}`}
               onClick={() => !isDeleting && handleOpenRemote(file)}
             >
               {isImage ? (
