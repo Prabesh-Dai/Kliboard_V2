@@ -158,6 +158,14 @@ function FileActionsMenu({
   onDelete: (file: FileRecord) => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleConfirmDelete() {
+    setDeleting(true);
+    await onDelete(file);
+    setDeleting(false);
+    setConfirmDelete(false);
+  }
 
   return (
     <>
@@ -187,7 +195,7 @@ function FileActionsMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialog open={confirmDelete} onOpenChange={(open) => !deleting && setConfirmDelete(open)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete file</AlertDialogTitle>
@@ -196,10 +204,15 @@ function FileActionsMenu({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onDelete(file)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <button
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+            >
+              {deleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

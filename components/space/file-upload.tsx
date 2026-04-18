@@ -2,15 +2,38 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, X, FileText, FileSpreadsheet, FileIcon, Loader2 } from "lucide-react";
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
+import type { PendingFile } from "@/components/space/file-list";
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileTypeIcon(mimeType: string) {
+  if (mimeType === "application/pdf") return FileText;
+  if (
+    mimeType.includes("spreadsheet") ||
+    mimeType.includes("excel") ||
+    mimeType === "text/csv"
+  )
+    return FileSpreadsheet;
+  if (mimeType.includes("word") || mimeType === "text/markdown") return FileText;
+  return FileIcon;
+}
 
 interface FileUploadProps {
   onFilesSelected: (files: File[]) => void;
   maxFiles?: number;
+  pendingFiles?: PendingFile[];
+  onRemovePending?: (id: string) => void;
+  uploading?: boolean;
+  full?: boolean;
 }
 
-export function FileUpload({ onFilesSelected, maxFiles }: FileUploadProps) {
+export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRemovePending, uploading, full }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -67,26 +90,85 @@ export function FileUpload({ onFilesSelected, maxFiles }: FileUploadProps) {
         setDragging(true);
       }}
       onDragLeave={() => setDragging(false)}
-      className={`flex flex-1 flex-col items-center justify-center rounded-lg bg-surface-container-low p-10 text-center border border-dashed transition-colors ${
+      className={`relative flex flex-1 flex-col overflow-hidden rounded-lg bg-surface-container-low border border-dashed transition-colors ${
         dragging
           ? "border-primary/40 bg-primary/5"
           : "border-ghost-border"
-      }`}
+      } ${pendingFiles.length > 0 ? "p-4" : "items-center justify-center p-10 text-center"}`}
     >
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container-high">
-        <Upload className="h-5 w-5 text-primary/70" />
-      </div>
-      <p className="font-heading text-sm font-medium">Upload Files</p>
-      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-        Drag, drop, or paste images here
-      </p>
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="mt-5 cursor-pointer rounded-md px-5 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
-      >
-        Browse Files
-      </button>
+      {dragging && pendingFiles.length > 0 && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/90 backdrop-blur-[2px]">
+          <Upload className="h-5 w-5 text-primary/70" />
+          <p className="text-xs font-medium text-muted-foreground">Drop files here</p>
+        </div>
+      )}
+      {pendingFiles.length > 0 ? (
+        <div className="flex flex-1 flex-col">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {pendingFiles.length} file{pendingFiles.length !== 1 && "s"} ready
+            </p>
+            {!full && (
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="cursor-pointer text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Add more
+              </button>
+            )}
+          </div>
+          <div className="flex max-h-32 flex-col gap-1.5 overflow-y-auto">
+            {pendingFiles.map(({ id, file }) => {
+              const Icon = getFileTypeIcon(file.type);
+              return (
+                <div
+                  key={id}
+                  className={`flex items-center gap-3 rounded-md bg-surface-container-high/50 px-3 py-2 transition-opacity ${uploading ? "opacity-50" : ""}`}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  )}
+                  <p className="min-w-0 flex-1 truncate text-xs">{file.name}</p>
+                  <p className="shrink-0 text-[10px] text-muted-foreground">{formatFileSize(file.size)}</p>
+                  {!uploading && onRemovePending && (
+                    <button
+                      onClick={() => onRemovePending(id)}
+                      className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : full ? (
+        <>
+          <p className="text-sm font-medium text-muted-foreground">File limit reached</p>
+          <p className="mt-1.5 text-xs text-muted-foreground">Maximum files per space</p>
+        </>
+      ) : (
+        <>
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container-high">
+            <Upload className="h-5 w-5 text-primary/70" />
+          </div>
+          <p className="font-heading text-sm font-medium">Upload Files</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            Drag, drop, or paste images here
+          </p>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="mt-5 cursor-pointer rounded-md px-5 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
+          >
+            Browse Files
+          </button>
+        </>
+      )}
       <input
         ref={inputRef}
         type="file"

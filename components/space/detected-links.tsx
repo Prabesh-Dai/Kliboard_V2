@@ -71,7 +71,7 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
               <DropdownMenuItem
                 key={url}
                 className="cursor-pointer"
-                onSelect={() => window.open(url, "_blank", "noopener,noreferrer")}
+                onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
               >
                 <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate">{extractDomain(url)}</span>

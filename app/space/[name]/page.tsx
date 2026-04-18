@@ -441,30 +441,13 @@ export default function SpacePage() {
               Space
             </p>
           )}
-          <div className="flex items-center gap-2.5">
-            <h1
-              ref={nameRef}
-              onClick={() => nameClipped && setNameExpanded((v) => !v)}
-              className={`truncate font-heading text-3xl font-medium tracking-tight ${nameClipped ? "cursor-pointer" : ""}`}
-            >
-              {decodeURIComponent(name)}
-            </h1>
-            {space && (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast.success("Link copied to clipboard");
-                  setShareCopied(true);
-                  clearTimeout(shareTimeout.current);
-                  shareTimeout.current = setTimeout(() => setShareCopied(false), 2000);
-                }}
-                className="relative flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
-              >
-                <Link className={`h-4 w-4 transition-all duration-200 ${shareCopied ? "scale-0 opacity-0" : "scale-100 opacity-100"}`} />
-                <Check className={`absolute h-4 w-4 text-primary transition-all duration-200 ${shareCopied ? "scale-100 opacity-100" : "scale-0 opacity-0"}`} />
-              </button>
-            )}
-          </div>
+          <h1
+            ref={nameRef}
+            onClick={() => nameClipped && setNameExpanded((v) => !v)}
+            className={`truncate font-heading text-3xl font-medium tracking-tight ${nameClipped ? "cursor-pointer" : ""}`}
+          >
+            {decodeURIComponent(name)}
+          </h1>
           {nameClipped && nameExpanded && (
             <p className="absolute left-0 z-10 mt-1 w-full break-all rounded-md bg-surface-container-high px-3 py-2 text-sm text-foreground shadow-md">
               {decodeURIComponent(name)}
@@ -500,6 +483,21 @@ export default function SpacePage() {
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {statusText}
                 </span>
+              )}
+              {space && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success("Link copied to clipboard");
+                    setShareCopied(true);
+                    clearTimeout(shareTimeout.current);
+                    shareTimeout.current = setTimeout(() => setShareCopied(false), 2000);
+                  }}
+                  className={`relative flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-surface-container-high hover:text-foreground ${menuOpen ? "pointer-events-none hidden" : ""}`}
+                >
+                  <Link className={`h-3.5 w-3.5 transition-all duration-200 ${shareCopied ? "scale-0 opacity-0" : "scale-100 opacity-100"}`} />
+                  <Check className={`absolute h-3.5 w-3.5 text-primary transition-all duration-200 ${shareCopied ? "scale-100 opacity-100" : "scale-0 opacity-0"}`} />
+                </button>
               )}
               {(content || space) && (
                 <div className="flex items-center">
@@ -539,18 +537,21 @@ export default function SpacePage() {
               )}
             </div>
           </div>
-          <Textarea
-            ref={textareaRef}
-            className="h-48 resize-none border-0 bg-transparent px-0 py-0 font-heading text-sm shadow-none field-sizing-fixed overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
-            placeholder="Start typing here..."
-            value={content}
-            onChange={(e) => canModify && setContent(e.target.value)}
-            readOnly={!canModify}
-          />
-          {batchUpload.isPending && batchUpload.progress.total > 0 && (
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Uploading {batchUpload.progress.completed}/{batchUpload.progress.total} files
-            </p>
+          {!canModify && !isNewSpace && contentIsMarkdown ? (
+            <div className="h-48 overflow-y-auto">
+              <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                <MarkdownRenderer content={content} />
+              </Suspense>
+            </div>
+          ) : (
+            <Textarea
+              ref={textareaRef}
+              className="h-48 resize-none border-0 bg-transparent px-0 py-0 font-heading text-sm shadow-none field-sizing-fixed overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
+              placeholder="Start typing here..."
+              value={content}
+              onChange={(e) => canModify && setContent(e.target.value)}
+              readOnly={!canModify}
+            />
           )}
           <div className="relative flex items-end justify-end gap-2">
             {(!user && isNewSpace) ? (
@@ -596,21 +597,14 @@ export default function SpacePage() {
               </p>
             </div>
           )}
-          {fileSlotsFull ? (
-            <div className="flex flex-1 flex-col items-center justify-center rounded-lg bg-surface-container-low p-10 text-center ring-1 ring-ghost-border">
-              <p className="text-sm font-medium text-muted-foreground">
-                File limit reached
-              </p>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Maximum {MAX_FILES_PER_SPACE} files per space
-              </p>
-            </div>
-          ) : (
-            <FileUpload
-              onFilesSelected={handleFilesSelected}
-              maxFiles={MAX_FILES_PER_SPACE - totalFileCount}
-            />
-          )}
+          <FileUpload
+            onFilesSelected={handleFilesSelected}
+            maxFiles={fileSlotsFull ? 0 : MAX_FILES_PER_SPACE - totalFileCount}
+            pendingFiles={pendingFiles}
+            onRemovePending={handleRemovePending}
+            uploading={batchUpload.isPending}
+            full={fileSlotsFull}
+          />
         </div>
       </div>
 
@@ -642,10 +636,9 @@ export default function SpacePage() {
           <FileList
             spaceName={space?.name ?? name}
             canDelete={canModify && !isNewSpace}
-            pendingFiles={pendingFiles}
+            pendingFiles={[]}
             onRemovePending={handleRemovePending}
             viewMode={fileViewMode}
-            uploading={batchUpload.isPending}
           />
         </div>
       }
