@@ -46,6 +46,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DeletionCountdown } from "@/components/space/deletion-countdown";
+import { DetectedLinks } from "@/components/space/detected-links";
 import { MAX_FILES_PER_SPACE } from "@/lib/constants";
 import {
   NotepadText,
@@ -418,14 +419,16 @@ export default function SpacePage() {
               <button
                 onClick={handleToggleLock}
                 disabled={toggleLock.isPending}
-                className="flex cursor-pointer items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex cursor-pointer items-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLocked ? <Lock className="h-2.5 w-2.5" /> : <LockOpen className="h-2.5 w-2.5" />}
+                &nbsp;
                 {isLocked ? "Locked" : "Unlocked"}<span className="hidden sm:inline">&nbsp;Space</span>
               </button>
             ) : (
-              <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <p className="flex items-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 {isLocked ? <Lock className="h-2.5 w-2.5" /> : <LockOpen className="h-2.5 w-2.5" />}
+                &nbsp;
                 {isLocked ? "Locked" : "Unlocked"}<span className="hidden sm:inline">&nbsp;Space</span>
               </p>
             )
@@ -528,15 +531,15 @@ export default function SpacePage() {
               Uploading {batchUpload.progress.completed}/{batchUpload.progress.total} files
             </p>
           )}
-          <div className="flex items-end justify-between gap-2">
-            <div>
-              {(!user && isNewSpace) && (
-                <p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  <Info className="h-3 w-3 shrink-0" />
-                  Space will be read-only<span className="hidden sm:inline">&nbsp;after saving</span>
-                </p>
-              )}
-            </div>
+          <div className="relative flex items-end justify-end gap-2">
+            {(!user && isNewSpace) ? (
+              <p className="mr-auto flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <Info className="h-3 w-3 shrink-0" />
+                Space will be read-only<span className="hidden sm:inline">&nbsp;after saving</span>
+              </p>
+            ) : (
+              <DetectedLinks content={content} />
+            )}
             <div className="relative shrink-0">
               {!canModify && !isNewSpace && (
                 <div className="absolute -inset-px z-10 flex items-center justify-center gap-1.5 rounded-sm bg-surface-container-low/90">
