@@ -6,7 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { DURATION_OPTIONS } from "@/lib/constants";
+import { DURATION_OPTIONS, ADMIN_DURATION_OPTIONS } from "@/lib/constants";
 import { AnimatedClock } from "@/components/space/animated-clock";
 
 interface DurationPickerProps {
@@ -16,6 +16,7 @@ interface DurationPickerProps {
   iconOnly?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  isAdmin?: boolean;
 }
 
 export function DurationPicker({
@@ -25,9 +26,11 @@ export function DurationPicker({
   iconOnly,
   open,
   onOpenChange,
+  isAdmin: isAdminUser,
 }: DurationPickerProps) {
+  const options = isAdminUser ? ADMIN_DURATION_OPTIONS : DURATION_OPTIONS;
   const selectedLabel =
-    DURATION_OPTIONS.find((o) => o.value === value)?.label ?? "Expiration";
+    options.find((o) => o.value === value)?.label ?? "Expiration";
 
   return (
     <Select
@@ -52,7 +55,7 @@ export function DurationPicker({
         )}
       </SelectTrigger>
       <SelectContent alignItemWithTrigger={false}>
-        {DURATION_OPTIONS.map((option) => (
+        {options.map((option) => (
           <SelectItem key={option.value} value={String(option.value)}>
             {option.label}
           </SelectItem>

@@ -77,34 +77,30 @@ export function RecentSpacesGrid() {
   const showLock = Boolean(user);
   const [open, setOpen] = useState(false);
 
-  if (isLoading) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-lg" />
-        ))}
-      </div>
-    );
-  }
-
-  if (error || !spaces?.length) {
-    return (
-      <div className="py-10 text-center">
-        <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">No recently visited spaces</p>
-      </div>
-    );
-  }
-
-  const hasMore = spaces.length > GRID_LIMIT;
+  const hasMore = !isLoading && spaces && spaces.length > GRID_LIMIT;
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {spaces.slice(0, GRID_LIMIT).map((space) => (
-          <Link key={space.id} href={`/space/${space.name}`}>
-            <SpaceCard space={space} showLock={showLock} />
-          </Link>
-        ))}
+      <div className="min-h-28">
+        {isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-lg" />
+            ))}
+          </div>
+        ) : error || !spaces?.length ? (
+          <div className="flex min-h-28 items-center justify-center">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">No recently visited spaces</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {spaces.slice(0, GRID_LIMIT).map((space) => (
+              <Link key={space.id} href={`/space/${space.name}`}>
+                <SpaceCard space={space} showLock={showLock} />
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {hasMore && (
@@ -125,7 +121,7 @@ export function RecentSpacesGrid() {
           </DialogHeader>
           <div className="-mx-5 overflow-y-auto px-5">
             <div className="flex flex-col gap-2">
-              {spaces.map((space) => (
+              {spaces?.map((space) => (
                 <Link
                   key={space.id}
                   href={`/space/${space.name}`}

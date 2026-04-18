@@ -3,14 +3,14 @@ import { RecentSpacesGrid } from "@/components/shared/recent-spaces-grid";
 
 export default function Home() {
   return (
-    <div className="flex min-h-[calc(100vh-7rem)] flex-col items-center justify-center px-6">
+    <div className="flex min-h-[calc(100vh-7rem)] flex-col items-center px-6 pt-[18vh]">
       <h1 className="mb-4 text-center font-heading text-4xl font-medium tracking-tight sm:text-5xl">
-        enter a space name
+        create a new space
       </h1>
 
       <SpaceEditor />
 
-      <div className="mt-28 w-full max-w-3xl">
+      <div className="mt-28 w-full max-w-3xl pb-16">
         <p className="mb-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
           recently visited
         </p>

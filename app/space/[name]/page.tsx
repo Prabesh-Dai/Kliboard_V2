@@ -82,7 +82,7 @@ function hasMarkdown(text: string): boolean {
 
 export default function SpacePage() {
   const { name } = useParams<{ name: string }>();
-  const { user } = useAuth();
+  const { user, isAdmin: userIsAdmin } = useAuth();
   const {
     data: space,
     isLoading,
@@ -153,8 +153,8 @@ export default function SpacePage() {
 
   const isOwner = Boolean(user && space?.owner_id === user.id);
   const isLocked = space?.is_locked ?? true;
-  const canModify = isNewSpace || isOwner || (Boolean(user) && !isLocked);
-  const canToggleLock = isOwner;
+  const canModify = isNewSpace || isOwner || (Boolean(user) && !isLocked) || userIsAdmin;
+  const canToggleLock = isOwner || userIsAdmin;
 
   const hasPendingFiles = Boolean(pendingFiles.length);
   const hasContent = Boolean(content.trim());
@@ -460,6 +460,7 @@ export default function SpacePage() {
             isSaved={Boolean(space)}
             duration={duration}
             onDurationChange={canModify ? setDuration : undefined}
+            isAdmin={userIsAdmin}
           />
         </div>
       </div>

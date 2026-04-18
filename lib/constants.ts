@@ -6,7 +6,15 @@ export const DURATION_OPTIONS = [
   { label: "10 days", value: 14400 },
 ] as const;
 
-export const DURATION_VALUES: readonly number[] = DURATION_OPTIONS.map((d) => d.value);
+export const ADMIN_DURATION_OPTIONS = [
+  ...DURATION_OPTIONS,
+  { label: "Unlimited", value: 0 },
+] as const;
+
+export const DURATION_VALUES: readonly number[] = [
+  ...DURATION_OPTIONS.map((d) => d.value),
+  0,
+];
 
 export const RESERVED_NAMES = [
   "api",

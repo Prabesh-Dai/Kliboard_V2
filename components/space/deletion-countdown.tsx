@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { DurationPicker } from "@/components/space/duration-picker";
-import { DURATION_OPTIONS } from "@/lib/constants";
+import { DURATION_OPTIONS, ADMIN_DURATION_OPTIONS } from "@/lib/constants";
 
 interface DeletionCountdownProps {
   countdown: string;
   isSaved: boolean;
   duration: number;
   onDurationChange?: (value: number) => void;
+  isAdmin?: boolean;
 }
 
 export function DeletionCountdown({
@@ -16,9 +17,11 @@ export function DeletionCountdown({
   isSaved,
   duration,
   onDurationChange,
+  isAdmin: isAdminUser,
 }: DeletionCountdownProps) {
+  const options = isAdminUser ? ADMIN_DURATION_OPTIONS : DURATION_OPTIONS;
   const durationLabel =
-    DURATION_OPTIONS.find((o) => o.value === duration)?.label ?? "";
+    options.find((o) => o.value === duration)?.label ?? "";
 
   const [showFlash, setShowFlash] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -37,6 +40,7 @@ export function DeletionCountdown({
     return () => clearTimeout(flashTimeout.current);
   }, [duration, isSaved]);
 
+  const isUnlimited = duration === 0;
   const showDuration = !isSaved || showFlash;
 
   const interactive = Boolean(onDurationChange);
@@ -47,25 +51,38 @@ export function DeletionCountdown({
       onClick={() => interactive && setPickerOpen((v) => !v)}
     >
       <div className="flex flex-col">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-opacity duration-300">
-          {showDuration ? (
-            <><span className="sm:hidden">duration</span><span className="hidden sm:inline">selected duration</span></>
-          ) : (
-            <><span className="sm:hidden">expires in</span><span className="hidden sm:inline">time until deletion</span></>
-          )}
-        </p>
-        <div className="grid h-7 overflow-hidden">
-          <p
-            className={`col-start-1 row-start-1 font-heading text-lg font-medium text-primary transition-transform duration-300 ease-out ${showDuration ? "-translate-y-full" : "translate-y-0"}`}
-          >
-            {countdown}
-          </p>
-          <p
-            className={`col-start-1 row-start-1 font-heading text-lg font-medium text-primary transition-transform duration-300 ease-out ${showDuration ? "translate-y-0" : "translate-y-full"}`}
-          >
-            {durationLabel}
-          </p>
-        </div>
+        {isUnlimited && isSaved ? (
+          <>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              duration
+            </p>
+            <p className="font-heading text-lg font-medium text-primary">
+              Unlimited
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-opacity duration-300">
+              {showDuration ? (
+                <><span className="sm:hidden">duration</span><span className="hidden sm:inline">selected duration</span></>
+              ) : (
+                <><span className="sm:hidden">expires in</span><span className="hidden sm:inline">time until deletion</span></>
+              )}
+            </p>
+            <div className="grid h-7 overflow-hidden">
+              <p
+                className={`col-start-1 row-start-1 font-heading text-lg font-medium text-primary transition-transform duration-300 ease-out ${showDuration ? "-translate-y-full" : "translate-y-0"}`}
+              >
+                {countdown}
+              </p>
+              <p
+                className={`col-start-1 row-start-1 font-heading text-lg font-medium text-primary transition-transform duration-300 ease-out ${showDuration ? "translate-y-0" : "translate-y-full"}`}
+              >
+                {durationLabel}
+              </p>
+            </div>
+          </>
+        )}
       </div>
       {onDurationChange && (
         <div className="flex items-stretch gap-2" onClick={(e) => e.stopPropagation()}>
@@ -76,6 +93,7 @@ export function DeletionCountdown({
             open={pickerOpen}
             onOpenChange={setPickerOpen}
             iconOnly
+            isAdmin={isAdminUser}
           />
         </div>
       )}

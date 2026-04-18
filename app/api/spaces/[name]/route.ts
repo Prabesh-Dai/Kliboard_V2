@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { updateSpaceSchema } from "@/lib/schemas/space.schema";
 import { readRateLimiter, updateRateLimiter } from "@/lib/rate-limit";
+import { isAdmin } from "@/lib/admin";
 
 export async function GET(
   request: Request,
@@ -21,7 +22,14 @@ export async function GET(
   const { name } = await params;
   const supabase = await createClient();
 
-  const { data: space, error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const userIsAdmin = user ? await isAdmin(user.id) : false;
+
+  const client = userIsAdmin ? createAdminClient() : supabase;
+  const { data: space, error } = await client
     .from("spaces")
     .select("*")
     .eq("name", name.toLowerCase())
@@ -31,7 +39,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (new Date(space.expires_at) < new Date()) {
+  if (new Date(space.expires_at) < new Date() && !userIsAdmin) {
     const admin = createAdminClient();
     const { data: files } = await admin
       .from("files")
@@ -49,7 +57,7 @@ export async function GET(
   }
 
   const { password_hash: _, ...safeSpace } = space;
-  return NextResponse.json(safeSpace);
+  return NextResponse.json({ ...safeSpace, is_admin: userIsAdmin });
 }
 
 export async function PATCH(
@@ -85,7 +93,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const { data: space } = await supabase
+  const userIsAdmin = await isAdmin(user.id);
+
+  const admin = createAdminClient();
+  const { data: space } = await admin
     .from("spaces")
     .select("id, owner_id, is_locked")
     .eq("name", name.toLowerCase())
@@ -95,9 +106,11 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const isOwner = space.owner_id === user.id;
-  if (space.is_locked && !isOwner) {
-    return NextResponse.json({ error: "Space is locked" }, { status: 403 });
+  if (!userIsAdmin) {
+    const isOwner = space.owner_id === user.id;
+    if (space.is_locked && !isOwner) {
+      return NextResponse.json({ error: "Space is locked" }, { status: 403 });
+    }
   }
 
   const updateData: {
@@ -109,14 +122,17 @@ export async function PATCH(
     updateData.content = parsed.data.content;
   }
   if (parsed.data.duration !== undefined) {
+    if (parsed.data.duration === 0 && !userIsAdmin) {
+      return NextResponse.json({ error: "Unlimited duration requires admin" }, { status: 403 });
+    }
     updateData.duration = parsed.data.duration;
-    updateData.expires_at = addMinutes(
-      new Date(),
-      parsed.data.duration
-    ).toISOString();
+    updateData.expires_at =
+      parsed.data.duration === 0
+        ? "9999-12-31T23:59:59.999Z"
+        : addMinutes(new Date(), parsed.data.duration).toISOString();
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from("spaces")
     .update(updateData)
     .eq("name", name.toLowerCase())
@@ -146,7 +162,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: space } = await supabase
+  const userIsAdmin = await isAdmin(user.id);
+  const admin = createAdminClient();
+
+  const { data: space } = await admin
     .from("spaces")
     .select("id, owner_id")
     .eq("name", name.toLowerCase())
@@ -156,11 +175,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (space.owner_id !== user.id) {
+  if (space.owner_id !== user.id && !userIsAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const admin = createAdminClient();
   const { data: files } = await admin
     .from("files")
     .select("storage_path")

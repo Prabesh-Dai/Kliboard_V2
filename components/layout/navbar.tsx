@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 export function Navbar() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -36,12 +36,22 @@ export function Navbar() {
         </Link>
         <div className="flex items-center gap-5">
           {!loading && user && (
-            <Link
-              href="/dashboard"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              my spaces
-            </Link>
+            <>
+              <Link
+                href="/dashboard"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                my spaces
+              </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  admin
+                </Link>
+              )}
+            </>
           )}
           {!loading && (
             <>

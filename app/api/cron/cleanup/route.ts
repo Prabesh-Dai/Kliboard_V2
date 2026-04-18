@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   const { data: expired, error: fetchError } = await supabase
     .from("spaces")
     .select("id")
+    .neq("duration", 0)
     .lt("expires_at", new Date().toISOString());
 
   if (fetchError) {

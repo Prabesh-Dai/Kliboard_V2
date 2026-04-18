@@ -89,6 +89,35 @@ export interface Database {
           }
         ];
       };
+      superadmins: {
+        Row: {
+          id: string;
+          user_id: string;
+          granted_via: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          granted_via?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          granted_via?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "superadmins_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
