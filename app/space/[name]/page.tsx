@@ -74,7 +74,7 @@ const MD_PATTERNS = [
 ];
 
 function hasMarkdown(text: string): boolean {
-  return MD_PATTERNS.filter((p) => p.test(text)).length >= 2;
+  return MD_PATTERNS.some((p) => p.test(text));
 }
 
 export default function SpacePage() {

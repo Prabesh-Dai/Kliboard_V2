@@ -69,6 +69,26 @@ export default function RootLayout({
       lang="en"
       className={cn("dark", inter.variable, spaceGrotesk.variable, jetbrainsMono.variable)}
     >
+      <head>
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              @supports not (color: var(--a)) {
+                html { background: #0d0f0f; color: #e3e6e6; }
+                body { background: #0d0f0f; color: #e3e6e6; font-family: "Inter", system-ui, sans-serif; -webkit-text-size-adjust: 100%; }
+                h1, h2, h3, h4, h5, h6 { font-family: "Space Grotesk", system-ui, sans-serif; }
+                a { color: #aacfbc; }
+                input, textarea, select { background: #171a1a; color: #e3e6e6; border: 1px solid #252929; border-radius: 8px; padding: 6px 12px; font-family: inherit; }
+                button { cursor: pointer; background: #1d2020; color: #e3e6e6; border: 1px solid #252929; border-radius: 8px; padding: 6px 12px; font-family: inherit; }
+                button svg { color: #e3e6e6; stroke: #e3e6e6; }
+                nav { padding: 8px 12px; }
+                main { padding: 8px 12px; }
+                footer { padding: 8px 12px; color: #a8acab; font-size: 12px; }
+              }
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <Providers>
           <div className="flex min-h-screen flex-col">
