@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { updateSpaceSchema } from "@/lib/schemas/space.schema";
 import { readRateLimiter, updateRateLimiter } from "@/lib/rate-limit";
 import { isAdmin } from "@/lib/admin";
+import { MAX_ANON_DURATION_MINUTES } from "@/lib/constants";
 
 export async function GET(
   request: Request,
@@ -124,6 +125,16 @@ export async function PATCH(
   if (parsed.data.duration !== undefined) {
     if (parsed.data.duration === 0 && !userIsAdmin) {
       return NextResponse.json({ error: "Unlimited duration requires admin" }, { status: 403 });
+    }
+    if (
+      !space.owner_id &&
+      !userIsAdmin &&
+      parsed.data.duration > MAX_ANON_DURATION_MINUTES
+    ) {
+      return NextResponse.json(
+        { error: "Guest spaces are limited to 1 day" },
+        { status: 403 }
+      );
     }
     updateData.duration = parsed.data.duration;
     updateData.expires_at =

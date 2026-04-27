@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSpaceFiles } from "@/hooks/use-file-upload";
-import { createClient } from "@/lib/supabase/client";
 import { fileItemVariants, baseTransition } from "@/lib/animations";
+import { SIGNED_URL_TTL_SECONDS } from "@/lib/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +54,7 @@ interface FileRecord {
   mime_type: string;
   size_bytes: number;
   created_at: string;
+  signed_url: string | null;
 }
 
 interface FileListProps {
@@ -70,7 +71,6 @@ const IMAGE_TYPES = [
   "image/png",
   "image/gif",
   "image/webp",
-  "image/svg+xml",
 ];
 
 function isImageFile(mimeType: string) {
@@ -83,12 +83,8 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getFileUrl(storagePath: string) {
-  const supabase = createClient();
-  const { data } = supabase.storage
-    .from("space-files")
-    .getPublicUrl(storagePath);
-  return data.publicUrl;
+function fileUrl(file: Pick<FileRecord, "signed_url">): string {
+  return file.signed_url ?? "";
 }
 
 function getFileTypeIcon(mimeType: string) {
@@ -104,7 +100,8 @@ function getFileTypeIcon(mimeType: string) {
 }
 
 async function downloadFile(file: FileRecord) {
-  const url = getFileUrl(file.storage_path);
+  const url = fileUrl(file);
+  if (!url) throw new Error("File link unavailable");
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Download failed (${res.status})`);
   const blob = await res.blob();
@@ -119,7 +116,8 @@ async function downloadFile(file: FileRecord) {
 }
 
 async function shareOrCopy(file: FileRecord): Promise<"shared" | "copied"> {
-  const url = getFileUrl(file.storage_path);
+  const url = fileUrl(file);
+  if (!url) throw new Error("File link unavailable");
   if (navigator.share) {
     try {
       await navigator.share({ title: file.filename, url });
@@ -286,6 +284,8 @@ export function FileList({
       return res.json() as Promise<FileRecord[]>;
     },
     enabled: Boolean(spaceName),
+    staleTime: (SIGNED_URL_TTL_SECONDS - 600) * 1000,
+    refetchOnWindowFocus: true,
   });
 
   const items: UnifiedItem[] = useMemo(() => {
@@ -365,7 +365,12 @@ export function FileList({
   }
 
   function handleOpenRemote(file: FileRecord) {
-    window.open(getFileUrl(file.storage_path), "_blank");
+    const url = fileUrl(file);
+    if (!url) {
+      toast.error("File link unavailable");
+      return;
+    }
+    window.open(url, "_blank");
   }
 
   if (isLoading && !pendingFiles.length) {
@@ -576,9 +581,9 @@ export function FileList({
                 className={`relative aspect-4/3 overflow-hidden ${isDeleting ? "pointer-events-none" : "cursor-pointer"}`}
                 onClick={() => !isDeleting && handleOpenRemote(file)}
               >
-                {isImage ? (
+                {isImage && file.signed_url ? (
                   <FadeInImage
-                    src={getFileUrl(file.storage_path)}
+                    src={file.signed_url}
                     alt={file.filename}
                     fill
                     sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 20vw"

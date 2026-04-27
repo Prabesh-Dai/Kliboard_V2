@@ -1,5 +1,54 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ORPHAN_GRACE_MS } from "@/lib/constants";
+
+const STORAGE_PAGE_SIZE = 1000;
+
+async function sweepOrphans(supabase: ReturnType<typeof createAdminClient>) {
+  const { data: known } = await supabase.from("files").select("storage_path");
+  const referenced = new Set(known?.map((f) => f.storage_path) ?? []);
+
+  const orphans: string[] = [];
+  const cutoff = Date.now() - ORPHAN_GRACE_MS;
+
+  const { data: spaceDirs } = await supabase.storage
+    .from("space-files")
+    .list("", { limit: STORAGE_PAGE_SIZE });
+
+  for (const dir of spaceDirs ?? []) {
+    if (!dir.name) continue;
+
+    let offset = 0;
+    while (true) {
+      const { data: entries, error } = await supabase.storage
+        .from("space-files")
+        .list(dir.name, { limit: STORAGE_PAGE_SIZE, offset });
+
+      if (error || !entries?.length) break;
+
+      for (const entry of entries) {
+        if (!entry.name) continue;
+        const path = `${dir.name}/${entry.name}`;
+        if (referenced.has(path)) continue;
+        const createdAt = entry.created_at
+          ? new Date(entry.created_at).getTime()
+          : Date.now();
+        if (createdAt < cutoff) {
+          orphans.push(path);
+        }
+      }
+
+      if (entries.length < STORAGE_PAGE_SIZE) break;
+      offset += STORAGE_PAGE_SIZE;
+    }
+  }
+
+  if (orphans.length) {
+    await supabase.storage.from("space-files").remove(orphans);
+  }
+
+  return orphans.length;
+}
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -19,31 +68,34 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: fetchError.message }, { status: 500 });
   }
 
-  if (!expired?.length) {
-    return NextResponse.json({ cleaned: 0 });
+  let cleaned = 0;
+  if (expired?.length) {
+    const ids = expired.map((s) => s.id);
+
+    const { data: files } = await supabase
+      .from("files")
+      .select("storage_path")
+      .in("space_id", ids);
+
+    if (files?.length) {
+      await supabase.storage
+        .from("space-files")
+        .remove(files.map((f) => f.storage_path));
+    }
+
+    const { error: deleteError } = await supabase
+      .from("spaces")
+      .delete()
+      .in("id", ids);
+
+    if (deleteError) {
+      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    }
+
+    cleaned = ids.length;
   }
 
-  const ids = expired.map((s) => s.id);
+  const orphans = await sweepOrphans(supabase);
 
-  const { data: files } = await supabase
-    .from("files")
-    .select("storage_path")
-    .in("space_id", ids);
-
-  if (files?.length) {
-    await supabase.storage
-      .from("space-files")
-      .remove(files.map((f) => f.storage_path));
-  }
-
-  const { error: deleteError } = await supabase
-    .from("spaces")
-    .delete()
-    .in("id", ids);
-
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ cleaned: ids.length });
+  return NextResponse.json({ cleaned, orphans });
 }

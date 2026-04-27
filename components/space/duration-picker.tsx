@@ -1,12 +1,18 @@
 "use client";
 
+import { Lock } from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
 } from "@/components/ui/select";
-import { DURATION_OPTIONS, ADMIN_DURATION_OPTIONS } from "@/lib/constants";
+import {
+  DURATION_OPTIONS,
+  ADMIN_DURATION_OPTIONS,
+  MAX_ANON_DURATION_MINUTES,
+} from "@/lib/constants";
 import { AnimatedClock } from "@/components/space/animated-clock";
 
 interface DurationPickerProps {
@@ -17,6 +23,7 @@ interface DurationPickerProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   isAdmin?: boolean;
+  isAnon?: boolean;
 }
 
 export function DurationPicker({
@@ -27,6 +34,7 @@ export function DurationPicker({
   open,
   onOpenChange,
   isAdmin: isAdminUser,
+  isAnon,
 }: DurationPickerProps) {
   const options = isAdminUser ? ADMIN_DURATION_OPTIONS : DURATION_OPTIONS;
   const selectedLabel =
@@ -55,11 +63,41 @@ export function DurationPicker({
         )}
       </SelectTrigger>
       <SelectContent alignItemWithTrigger={false}>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={String(option.value)}>
-            {option.label}
-          </SelectItem>
-        ))}
+        {(() => {
+          const activeOptions = isAnon
+            ? options.filter((o) => o.value <= MAX_ANON_DURATION_MINUTES)
+            : options;
+          const lockedOptions = isAnon
+            ? options.filter((o) => o.value > MAX_ANON_DURATION_MINUTES)
+            : [];
+          return (
+            <>
+              {activeOptions.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)}>
+                  <span className="flex flex-1 items-center">
+                    {option.label}
+                  </span>
+                </SelectItem>
+              ))}
+              {lockedOptions.length > 0 && <SelectSeparator />}
+              {lockedOptions.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={String(option.value)}
+                  disabled
+                >
+                  <span className="flex flex-1 items-center justify-between gap-3">
+                    <span>{option.label}</span>
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <Lock />
+                      Sign in
+                    </span>
+                  </span>
+                </SelectItem>
+              ))}
+            </>
+          );
+        })()}
       </SelectContent>
     </Select>
   );

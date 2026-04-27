@@ -5,7 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeRateLimiter } from "@/lib/rate-limit";
 import { addMinutes } from "date-fns";
-import { MAX_SPACE_STORAGE_BYTES } from "@/lib/constants";
+import {
+  GLOBAL_ANON_SPACE_CAP,
+  MAX_ANON_DURATION_MINUTES,
+  MAX_SPACE_STORAGE_BYTES,
+} from "@/lib/constants";
 
 async function insertFiles(
   spaceId: string,
@@ -53,6 +57,32 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user && duration > MAX_ANON_DURATION_MINUTES) {
+    return NextResponse.json(
+      { error: "Sign in to keep spaces longer than 1 day" },
+      { status: 403 }
+    );
+  }
+
+  if (!user) {
+    const admin = createAdminClient();
+    const { count } = await admin
+      .from("spaces")
+      .select("id", { count: "exact", head: true })
+      .is("owner_id", null)
+      .gt("expires_at", new Date().toISOString());
+
+    if ((count ?? 0) >= GLOBAL_ANON_SPACE_CAP) {
+      return NextResponse.json(
+        {
+          error:
+            "Service is at capacity for guest spaces. Sign in or try again later.",
+        },
+        { status: 503 }
+      );
+    }
+  }
 
   const expiresAt = addMinutes(new Date(), duration).toISOString();
   const normalizedName = name.toLowerCase();

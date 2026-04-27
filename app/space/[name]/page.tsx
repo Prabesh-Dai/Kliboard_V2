@@ -83,7 +83,8 @@ function hasMarkdown(text: string): boolean {
 
 export default function SpacePage() {
   const { name } = useParams<{ name: string }>();
-  const { user, isAdmin: userIsAdmin } = useAuth();
+  const { user, isAdmin: userIsAdmin, loading: authLoading } = useAuth();
+  const isAnon = !authLoading && !user;
   const {
     data: space,
     isLoading,
@@ -488,6 +489,7 @@ export default function SpacePage() {
             duration={duration}
             onDurationChange={canModify ? setDuration : undefined}
             isAdmin={userIsAdmin}
+            isAnon={isAnon}
           />
         </div>
       </div>
@@ -637,6 +639,7 @@ export default function SpacePage() {
             uploading={isSaving && pendingFiles.length > 0}
             full={fileSlotsFull}
             progress={activeUploadProgress}
+            disabled={!canModify && !isNewSpace}
           />
         </div>
       </div>

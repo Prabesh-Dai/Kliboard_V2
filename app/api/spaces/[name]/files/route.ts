@@ -10,6 +10,7 @@ import {
   MAX_FILE_SIZE_BYTES,
   MAX_FILES_PER_SPACE,
   MAX_SPACE_STORAGE_BYTES,
+  SIGNED_URL_TTL_SECONDS,
 } from "@/lib/constants";
 
 const fileMetadataSchema = z.object({
@@ -151,5 +152,29 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(files);
+  if (!files?.length) {
+    return NextResponse.json([]);
+  }
+
+  const admin = createAdminClient();
+  const { data: signed } = await admin.storage
+    .from("space-files")
+    .createSignedUrls(
+      files.map((f) => f.storage_path),
+      SIGNED_URL_TTL_SECONDS
+    );
+
+  const urlByPath = new Map<string, string>();
+  for (const entry of signed ?? []) {
+    if (entry.signedUrl && entry.path) {
+      urlByPath.set(entry.path, entry.signedUrl);
+    }
+  }
+
+  const withUrls = files.map((f) => ({
+    ...f,
+    signed_url: urlByPath.get(f.storage_path) ?? null,
+  }));
+
+  return NextResponse.json(withUrls);
 }

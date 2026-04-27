@@ -10,6 +10,7 @@ interface DeletionCountdownProps {
   duration: number;
   onDurationChange?: (value: number) => void;
   isAdmin?: boolean;
+  isAnon?: boolean;
 }
 
 export function DeletionCountdown({
@@ -18,6 +19,7 @@ export function DeletionCountdown({
   duration,
   onDurationChange,
   isAdmin: isAdminUser,
+  isAnon,
 }: DeletionCountdownProps) {
   const options = isAdminUser ? ADMIN_DURATION_OPTIONS : DURATION_OPTIONS;
   const durationLabel =
@@ -94,6 +96,7 @@ export function DeletionCountdown({
             onOpenChange={setPickerOpen}
             iconOnly
             isAdmin={isAdminUser}
+            isAnon={isAnon}
           />
         </div>
       )}

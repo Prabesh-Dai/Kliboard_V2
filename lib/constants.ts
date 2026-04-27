@@ -37,12 +37,16 @@ export const SPACE_NAME_MIN = 3;
 export const SPACE_NAME_MAX = 24;
 export const POLLING_INTERVAL_MS = 5000;
 
+export const MAX_ANON_DURATION_MINUTES = 1440;
+export const GLOBAL_ANON_SPACE_CAP = 1000;
+export const SIGNED_URL_TTL_SECONDS = 3600;
+export const ORPHAN_GRACE_MS = 60 * 60 * 1000;
+
 export const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
-  "image/svg+xml",
   "application/pdf",
   "text/plain",
   "text/csv",

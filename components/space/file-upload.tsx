@@ -34,9 +34,10 @@ interface FileUploadProps {
   uploading?: boolean;
   full?: boolean;
   progress?: { completed: number; total: number };
+  disabled?: boolean;
 }
 
-export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRemovePending, uploading, full, progress }: FileUploadProps) {
+export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRemovePending, uploading, full, progress, disabled }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -68,6 +69,7 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
   );
 
   useEffect(() => {
+    if (disabled) return;
     function handlePaste(e: ClipboardEvent) {
       const files = e.clipboardData?.files;
       if (!files?.length) return;
@@ -78,11 +80,12 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
     }
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [handleFiles]);
+  }, [handleFiles, disabled]);
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragging(false);
+    if (disabled) return;
     handleFiles(e.dataTransfer.files);
   }
 
