@@ -97,6 +97,8 @@ export default function SpacePage() {
   const [syncedContent, setSyncedContent] = useState("");
   const [syncedDuration, setSyncedDuration] = useState(5);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [storageProgress, setStorageProgress] = useState<{ completed: number; total: number }>({ completed: 0, total: 0 });
   const [fileViewMode, setFileViewMode] = useState<"grid" | "list">("grid");
   const [statusText, setStatusText] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -169,7 +171,13 @@ export default function SpacePage() {
         pendingFiles.length > 0)
     );
   const isSaving =
-    createSpace.isPending || updateSpace.isPending || batchUpload.isPending;
+    isSubmitting || createSpace.isPending || updateSpace.isPending || batchUpload.isPending;
+  const activeUploadProgress =
+    batchUpload.isPending && batchUpload.progress.total > 0
+      ? batchUpload.progress
+      : storageProgress.total > 0
+        ? storageProgress
+        : { completed: 0, total: 0 };
 
   const hasRemoteChanges = Boolean(
     space &&
@@ -272,6 +280,7 @@ export default function SpacePage() {
   }
 
   async function executeSave() {
+    setIsSubmitting(true);
     try {
       let savedSpace = space;
 
@@ -279,9 +288,11 @@ export default function SpacePage() {
         let filesMeta: { filename: string; storage_path: string; mime_type: string; size_bytes: number }[] | undefined;
 
         if (pendingFiles.length > 0) {
+          setStorageProgress({ completed: 0, total: pendingFiles.length });
           const storageResults = await uploadFilesToStorage(
             pendingFiles.map((p) => p.file),
-            name
+            name,
+            (completed, total) => setStorageProgress({ completed, total })
           );
           const failed = storageResults.filter((r) => !r.success);
           if (failed.length) {
@@ -308,7 +319,10 @@ export default function SpacePage() {
 
         if (pendingFiles.length > 0) {
           await queryClient.invalidateQueries({ queryKey: ["files", created.name] });
-          pendingFiles.forEach((p) => {
+          const toClear = pendingFiles;
+          setPendingFiles((prev) => prev.map((p) => ({ ...p, exiting: true })));
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          toClear.forEach((p) => {
             if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
           });
           setPendingFiles([]);
@@ -339,7 +353,10 @@ export default function SpacePage() {
           }
 
           await queryClient.invalidateQueries({ queryKey: ["files", savedSpace.name] });
-          pendingFiles.forEach((p) => {
+          const toClear = pendingFiles;
+          setPendingFiles((prev) => prev.map((p) => ({ ...p, exiting: true })));
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          toClear.forEach((p) => {
             if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
           });
           setPendingFiles([]);
@@ -358,6 +375,9 @@ export default function SpacePage() {
       }
       const msg = err instanceof Error ? err.message : "Save failed";
       toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+      setStorageProgress({ completed: 0, total: 0 });
     }
   }
 
@@ -588,8 +608,8 @@ export default function SpacePage() {
               >
                 <span className="whitespace-nowrap text-xs font-medium uppercase tracking-widest">
                   {isSaving
-                    ? batchUpload.isPending && batchUpload.progress.total > 0
-                      ? `uploading ${batchUpload.progress.completed}/${batchUpload.progress.total}...`
+                    ? activeUploadProgress.total > 0
+                      ? `uploading ${activeUploadProgress.completed}/${activeUploadProgress.total}...`
                       : "saving..."
                     : isNewSpace
                       ? <>{`Save`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>
@@ -600,7 +620,7 @@ export default function SpacePage() {
           </div>
         </div>
 
-        <div className="relative flex flex-col">
+        <div className="relative flex min-w-0 flex-col">
           {!canModify && !isNewSpace && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/80 backdrop-blur-[2px]">
               <Lock className="h-5 w-5 text-muted-foreground" />
@@ -614,9 +634,9 @@ export default function SpacePage() {
             maxFiles={fileSlotsFull ? 0 : MAX_FILES_PER_SPACE - totalFileCount}
             pendingFiles={pendingFiles}
             onRemovePending={handleRemovePending}
-            uploading={batchUpload.isPending}
+            uploading={isSaving && pendingFiles.length > 0}
             full={fileSlotsFull}
-            progress={batchUpload.progress}
+            progress={activeUploadProgress}
           />
         </div>
       </div>

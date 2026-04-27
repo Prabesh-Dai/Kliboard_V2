@@ -23,10 +23,14 @@ export interface StorageUploadResult {
 
 export async function uploadFilesToStorage(
   files: File[],
-  spaceName: string
+  spaceName: string,
+  onProgress?: (completed: number, total: number) => void
 ): Promise<StorageUploadResult[]> {
   const supabase = createClient();
   const results: StorageUploadResult[] = [];
+  const total = files.length;
+
+  onProgress?.(0, total);
 
   for (const file of files) {
     const path = `${spaceName}/${crypto.randomUUID()}-${file.name}`;
@@ -52,6 +56,8 @@ export async function uploadFilesToStorage(
         success: true,
       });
     }
+
+    onProgress?.(results.length, total);
   }
 
   return results;
@@ -166,8 +172,6 @@ export function useBatchFileUpload() {
 }
 
 export function useSpaceFiles(spaceName: string) {
-  const queryClient = useQueryClient();
-
   return {
     deleteFile: useMutation({
       mutationFn: async (fileId: string) => {
@@ -179,9 +183,6 @@ export function useSpaceFiles(spaceName: string) {
           throw new Error(errorData.error ?? "Failed to delete file");
         }
         return res.json();
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["files", spaceName] });
       },
     }),
   };

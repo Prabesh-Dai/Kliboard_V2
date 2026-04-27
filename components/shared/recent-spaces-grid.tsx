@@ -115,11 +115,11 @@ export function RecentSpacesGrid() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[70vh] sm:max-w-md">
+        <DialogContent className="flex max-h-[70vh] flex-col overflow-hidden sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Recent spaces</DialogTitle>
           </DialogHeader>
-          <div className="-mx-5 overflow-y-auto px-5">
+          <div className="-mx-5 min-h-0 flex-1 overflow-y-auto px-5">
             <div className="flex flex-col gap-2">
               {spaces?.map((space) => (
                 <Link

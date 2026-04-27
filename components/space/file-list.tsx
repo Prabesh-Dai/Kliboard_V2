@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSpaceFiles } from "@/hooks/use-file-upload";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -41,6 +42,7 @@ export interface PendingFile {
   id: string;
   file: File;
   previewUrl: string;
+  exiting?: boolean;
 }
 
 interface FileRecord {
@@ -237,6 +239,7 @@ export function FileList({
   uploading,
 }: FileListProps) {
   const { deleteFile } = useSpaceFiles(spaceName);
+  const queryClient = useQueryClient();
 
   const { data: remoteFiles, isLoading } = useQuery({
     queryKey: ["files", spaceName],
@@ -265,6 +268,7 @@ export function FileList({
   }, [pendingFiles, remoteFiles]);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -301,11 +305,15 @@ export function FileList({
     try {
       await deleteFile.mutateAsync(file.id);
       toast.success(`${file.filename} deleted`);
+      setDeletingId(null);
+      setRemovingId(file.id);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await queryClient.invalidateQueries({ queryKey: ["files", spaceName] });
+      setRemovingId(null);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to delete file";
       toast.error(message);
-    } finally {
       setDeletingId(null);
     }
   }
@@ -368,12 +376,13 @@ export function FileList({
           const file = item.data;
           const Icon = getFileTypeIcon(file.mime_type);
           const isDeleting = deletingId === file.id;
+          const isRemoving = removingId === file.id;
           return (
             <div
               key={`remote-${file.id}`}
-              className={`group relative flex items-center gap-4 rounded-lg bg-surface-container-low px-4 py-3 transition-opacity ${isDeleting ? "opacity-50" : ""}`}
+              className={`group relative flex animate-in fade-in-0 slide-in-from-top-2 items-center gap-4 rounded-lg bg-surface-container-low px-4 py-3 transition-opacity duration-300 ${isDeleting ? "opacity-50" : ""} ${isRemoving ? "animate-out fade-out-0 slide-out-to-top-2 fill-mode-forwards duration-300" : ""}`}
             >
-              {isDeleting && (
+              {isDeleting && !isRemoving && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-lg">
                   <Loader2 className="h-4 w-4 animate-spin text-destructive" />
                   <p className="text-[10px] font-medium uppercase tracking-wider text-destructive">
@@ -461,13 +470,14 @@ export function FileList({
         const isImage = isImageFile(file.mime_type);
         const Icon = getFileTypeIcon(file.mime_type);
         const isDeleting = deletingId === file.id;
+        const isRemoving = removingId === file.id;
 
         return (
           <div
             key={`remote-${file.id}`}
-            className={`group relative flex flex-col overflow-hidden rounded-lg bg-surface-container-low transition-opacity ${isDeleting ? "opacity-50" : ""}`}
+            className={`group relative flex animate-in fade-in-0 slide-in-from-top-2 flex-col overflow-hidden rounded-lg bg-surface-container-low transition-opacity duration-300 ${isDeleting ? "opacity-50" : ""} ${isRemoving ? "animate-out fade-out-0 slide-out-to-top-2 fill-mode-forwards duration-300" : ""}`}
           >
-            {isDeleting ? (
+            {isDeleting && !isRemoving ? (
               <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
                 <Loader2 className="h-5 w-5 animate-spin text-destructive" />
                 <p className="text-[10px] font-medium uppercase tracking-wider text-destructive">
