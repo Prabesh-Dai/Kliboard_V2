@@ -56,7 +56,15 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
   }
 
-  await admin.storage.from("space-files").remove([file.storage_path]);
+  const { error: removeError } = await admin.storage
+    .from("space-files")
+    .remove([file.storage_path]);
+  if (removeError) {
+    console.error("storage.remove failed (file DELETE)", {
+      path: file.storage_path,
+      removeError,
+    });
+  }
 
   return NextResponse.json({ deleted: true });
 }

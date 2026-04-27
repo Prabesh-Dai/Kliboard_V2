@@ -48,9 +48,13 @@ export async function GET(
       .eq("space_id", space.id);
 
     if (files?.length) {
-      await admin.storage
+      const paths = files.map((f) => f.storage_path);
+      const { error: removeError } = await admin.storage
         .from("space-files")
-        .remove(files.map((f) => f.storage_path));
+        .remove(paths);
+      if (removeError) {
+        console.error("storage.remove failed (lazy delete)", { paths, removeError });
+      }
     }
 
     await admin.from("spaces").delete().eq("id", space.id);
@@ -196,9 +200,13 @@ export async function DELETE(
     .eq("space_id", space.id);
 
   if (files?.length) {
-    await admin.storage
+    const paths = files.map((f) => f.storage_path);
+    const { error: removeError } = await admin.storage
       .from("space-files")
-      .remove(files.map((f) => f.storage_path));
+      .remove(paths);
+    if (removeError) {
+      console.error("storage.remove failed (DELETE space)", { paths, removeError });
+    }
   }
 
   const { error } = await admin

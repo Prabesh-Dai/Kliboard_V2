@@ -11,12 +11,22 @@ import {
   MAX_SPACE_STORAGE_BYTES,
 } from "@/lib/constants";
 
+async function removeStorage(paths: string[]) {
+  if (!paths.length) return;
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from("space-files").remove(paths);
+  if (error) console.error("storage.remove failed", { paths, error });
+}
+
 async function insertFiles(
   spaceId: string,
   files: { filename: string; storage_path: string; mime_type: string; size_bytes: number }[]
 ) {
   const totalSize = files.reduce((sum, f) => sum + f.size_bytes, 0);
-  if (totalSize > MAX_SPACE_STORAGE_BYTES) return;
+  if (totalSize > MAX_SPACE_STORAGE_BYTES) {
+    await removeStorage(files.map((f) => f.storage_path));
+    return;
+  }
 
   const admin = createAdminClient();
   const { error } = await admin.from("files").insert(
@@ -29,7 +39,10 @@ async function insertFiles(
     }))
   );
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    await removeStorage(files.map((f) => f.storage_path));
+    throw new Error(error.message);
+  }
 }
 
 export async function POST(request: Request) {
@@ -125,9 +138,7 @@ export async function POST(request: Request) {
         .eq("space_id", existing.id);
 
       if (oldFiles?.length) {
-        await admin.storage
-          .from("space-files")
-          .remove(oldFiles.map((f) => f.storage_path));
+        await removeStorage(oldFiles.map((f) => f.storage_path));
       }
 
       const { error: deleteError } = await admin

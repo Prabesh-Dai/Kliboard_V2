@@ -44,7 +44,15 @@ async function sweepOrphans(supabase: ReturnType<typeof createAdminClient>) {
   }
 
   if (orphans.length) {
-    await supabase.storage.from("space-files").remove(orphans);
+    const { error: removeError } = await supabase.storage
+      .from("space-files")
+      .remove(orphans);
+    if (removeError) {
+      console.error("storage.remove failed (orphan sweep)", {
+        count: orphans.length,
+        removeError,
+      });
+    }
   }
 
   return orphans.length;
@@ -78,9 +86,16 @@ export async function GET(request: Request) {
       .in("space_id", ids);
 
     if (files?.length) {
-      await supabase.storage
+      const paths = files.map((f) => f.storage_path);
+      const { error: removeError } = await supabase.storage
         .from("space-files")
-        .remove(files.map((f) => f.storage_path));
+        .remove(paths);
+      if (removeError) {
+        console.error("storage.remove failed (cron expired)", {
+          paths,
+          removeError,
+        });
+      }
     }
 
     const { error: deleteError } = await supabase

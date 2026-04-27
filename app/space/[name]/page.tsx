@@ -32,6 +32,7 @@ function useCountdown(expiresAt?: string) {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSpace, useCreateSpace, useUpdateSpace, useToggleLock } from "@/hooks/use-space";
 import { useBatchFileUpload, uploadFilesToStorage } from "@/hooks/use-file-upload";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { FileUpload } from "@/components/space/file-upload";
 import { FileList } from "@/components/space/file-list";
@@ -287,6 +288,7 @@ export default function SpacePage() {
 
       if (isNewSpace) {
         let filesMeta: { filename: string; storage_path: string; mime_type: string; size_bytes: number }[] | undefined;
+        let uploadedPaths: string[] = [];
 
         if (pendingFiles.length > 0) {
           setStorageProgress({ completed: 0, total: pendingFiles.length });
@@ -299,22 +301,36 @@ export default function SpacePage() {
           if (failed.length) {
             for (const f of failed) toast.error(`${f.filename}: ${f.error}`);
           }
-          filesMeta = storageResults
-            .filter((r) => r.success)
-            .map(({ filename, storage_path, mime_type, size_bytes }) => ({
-              filename,
-              storage_path,
-              mime_type,
-              size_bytes,
-            }));
+          const succeeded = storageResults.filter((r) => r.success);
+          uploadedPaths = succeeded.map((r) => r.storage_path);
+          filesMeta = succeeded.map(({ filename, storage_path, mime_type, size_bytes }) => ({
+            filename,
+            storage_path,
+            mime_type,
+            size_bytes,
+          }));
         }
 
-        const created = await createSpace.mutateAsync({
-          name,
-          content,
-          duration,
-          files: filesMeta,
-        });
+        let created;
+        try {
+          created = await createSpace.mutateAsync({
+            name,
+            content,
+            duration,
+            files: filesMeta,
+          });
+        } catch (err) {
+          if (uploadedPaths.length) {
+            const supabase = createClient();
+            const { error: removeError } = await supabase.storage
+              .from("space-files")
+              .remove(uploadedPaths);
+            if (removeError) {
+              console.error("Failed to roll back uploads", removeError);
+            }
+          }
+          throw err;
+        }
         savedSpace = created;
         queryClient.setQueryData(["space", name], created);
 

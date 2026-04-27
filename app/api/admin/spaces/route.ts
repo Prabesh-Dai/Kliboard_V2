@@ -68,9 +68,16 @@ export async function DELETE(request: Request) {
     .in("space_id", spaceIds);
 
   if (files?.length) {
-    await admin.storage
+    const paths = files.map((f) => f.storage_path);
+    const { error: removeError } = await admin.storage
       .from("space-files")
-      .remove(files.map((f) => f.storage_path));
+      .remove(paths);
+    if (removeError) {
+      console.error("storage.remove failed (admin bulk delete)", {
+        paths,
+        removeError,
+      });
+    }
   }
 
   const { error } = await admin.from("spaces").delete().in("id", spaceIds);
