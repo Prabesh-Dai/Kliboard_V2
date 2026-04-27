@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdmin } from "@/lib/admin";
 import { readRateLimiter, uploadRateLimiter } from "@/lib/rate-limit";
 import {
   ALLOWED_MIME_TYPES,
@@ -66,12 +68,15 @@ export async function POST(
     return NextResponse.json({ error: "Space not found" }, { status: 404 });
   }
 
+  const userIsAdmin = await isAdmin(user.id);
   const isOwner = space.owner_id === user.id;
-  if (space.is_locked && !isOwner) {
+  if (space.is_locked && !isOwner && !userIsAdmin) {
     return NextResponse.json({ error: "Space is locked" }, { status: 403 });
   }
 
-  const { data: existingFiles } = await supabase
+  const admin = createAdminClient();
+
+  const { data: existingFiles } = await admin
     .from("files")
     .select("size_bytes")
     .eq("space_id", space.id);
@@ -92,7 +97,7 @@ export async function POST(
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from("files")
     .insert({
       space_id: space.id,

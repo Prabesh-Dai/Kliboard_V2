@@ -62,6 +62,9 @@ Every `catch` block must handle the error. Options include: logging, rethrowing,
 ### Show Plan Before Implementation
 Always present an implementation plan to the user and get approval before making code changes. This applies to new features, refactors, bug fixes, and any non-trivial modifications. The plan should outline which files will be created/modified and what changes will be made.
 
+### Keep CLAUDE.md Current
+Treat this file as living documentation. When the user shares a notable rule, convention, anti-pattern, or decision during a session, add it here (or update/remove an outdated entry) so future sessions inherit the lesson. Keep additions terse and in the existing bullet style. Don't only append — prune contradicted or stale rules so this file doesn't enforce old habits.
+
 ## Conventions
 
 - **No custom CSS files.** All styling via Tailwind utility classes

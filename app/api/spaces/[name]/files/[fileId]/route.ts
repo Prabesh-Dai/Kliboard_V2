@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdmin } from "@/lib/admin";
 
 export async function DELETE(
   _request: Request,
@@ -37,8 +38,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Space not found" }, { status: 404 });
   }
 
+  const userIsAdmin = await isAdmin(user.id);
   const isOwner = space.owner_id === user.id;
-  if (space.is_locked && !isOwner) {
+  if (space.is_locked && !isOwner && !userIsAdmin) {
     return NextResponse.json({ error: "Space is locked" }, { status: 403 });
   }
 
