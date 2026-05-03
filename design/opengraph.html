@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Kliboard — OpenGraph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Fraunces:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f0f;
+    --surface-low: #111414;
+    --surface: #171a1a;
+    --surface-high: #1d2020;
+    --on-surface: #e3e6e6;
+    --on-surface-variant: #a8acab;
+    --primary: #aacfbc;
+    --primary-dim: #7ea692;
+    --primary-container: #38594a;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    font-family: 'Inter', sans-serif;
+    color: var(--on-surface);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+  .og {
+    width: 1200px;
+    height: 630px;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 1100px 700px at 78% 50%, rgba(170, 207, 188, 0.10), transparent 60%),
+      radial-gradient(ellipse 800px 500px at 15% 110%, rgba(56, 89, 74, 0.18), transparent 60%),
+      linear-gradient(180deg, #0e1111 0%, #0a0c0c 100%);
+  }
+
+  /* Atmospheric grid */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(170, 207, 188, var(--grid-alpha, 0.025)) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(170, 207, 188, var(--grid-alpha, 0.025)) 1px, transparent 1px);
+    background-size: var(--grid-size, 80px) var(--grid-size, 80px);
+    background-position: -1px -1px;
+    mask-image: radial-gradient(ellipse 900px 600px at 50% 50%, black 30%, transparent 90%);
+    -webkit-mask-image: radial-gradient(ellipse 900px 600px at 50% 50%, black 30%, transparent 90%);
+  }
+
+  /* Diagonal hatch atmosphere */
+  .hatch {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(170, 207, 188, 0.04) 0 1px,
+      transparent 1px 14px
+    );
+    mask-image: radial-gradient(ellipse 900px 600px at 50% 50%, black 30%, transparent 90%);
+    -webkit-mask-image: radial-gradient(ellipse 900px 600px at 50% 50%, black 30%, transparent 90%);
+  }
+
+  /* Spotlight halo behind logo */
+  .halo {
+    position: absolute;
+    right: 90px; top: 50%;
+    width: 600px; height: 600px;
+    transform: translateY(-50%);
+    background: radial-gradient(circle, rgba(170,207,188,0.18), transparent 60%);
+    pointer-events: none;
+  }
+
+  .chrome {
+    position: absolute;
+    top: 40px;
+    left: 56px;
+    right: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .meta .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 12px rgba(170, 207, 188, 0.6);
+  }
+
+  .content {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 460px;
+    align-items: center;
+    padding: 0 90px;
+  }
+
+  .left { padding-top: 30px; max-width: 600px; }
+
+  .eyebrow-plain {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    margin: 0 0 24px 0;
+    color: var(--on-surface);
+  }
+
+  /* Mood: architectural (default) */
+  .mood-architectural h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 88px;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+  }
+  .mood-architectural h1 .accent {
+    color: var(--primary);
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  /* Mood: editorial — serif, lighter, more contrast in italics */
+  .mood-editorial h1 {
+    font-family: 'Fraunces', 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: 92px;
+    line-height: 0.96;
+    letter-spacing: -0.02em;
+  }
+  .mood-editorial h1 .accent {
+    color: var(--primary);
+    font-style: italic;
+    font-weight: 400;
+  }
+  .mood-editorial .eyebrow-plain { color: var(--on-surface-variant); }
+
+  /* Mood: soft — lighter sans, larger lede, no italic accent */
+  .mood-soft h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 400;
+    font-size: 84px;
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+  }
+  .mood-soft h1 .accent {
+    color: var(--primary);
+    font-weight: 500;
+    font-style: normal;
+  }
+
+  .lede {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #6b6e6d;
+    max-width: 480px;
+    margin: 0;
+    text-wrap: pretty;
+    font-weight: 400;
+  }
+
+  .right {
+    position: relative;
+    height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Logo backdrop variants */
+  .logo-frame {
+    position: relative;
+    width: 380px;
+    height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame-framed {
+    border-radius: 24px;
+    background:
+      radial-gradient(ellipse 400px 300px at 30% 20%, rgba(170, 207, 188, 0.18), transparent 70%),
+      linear-gradient(135deg, #1d2020 0%, #111414 100%);
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(170, 207, 188, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .frame-bare {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .frame-spotlight {
+    background: radial-gradient(circle at center, rgba(170,207,188,0.10), transparent 65%);
+    border-radius: 50%;
+  }
+
+  .logo-frame img {
+    width: 280px;
+    height: 280px;
+    object-fit: contain;
+    filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.4));
+    position: relative;
+    z-index: 2;
+  }
+
+  .frame-bare img,
+  .frame-spotlight img {
+    width: 320px;
+    height: 320px;
+  }
+
+  /* Corner ticks (only on framed) */
+  .tick {
+    position: absolute;
+    width: 18px; height: 18px;
+    border: 1px solid rgba(170, 207, 188, 0.35);
+  }
+  .tick.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; border-top-left-radius: 3px; }
+  .tick.tr { top: -1px; right: -1px; border-left: none; border-bottom: none; border-top-right-radius: 3px; }
+  .tick.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; border-bottom-left-radius: 3px; }
+  .tick.br { bottom: -1px; right: -1px; border-left: none; border-top: none; border-bottom-right-radius: 3px; }
+
+  .footer {
+    position: absolute;
+    bottom: 36px;
+    left: 56px;
+    right: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+  }
+  .footer .url { color: var(--on-surface); font-weight: 500; }
+  .footer .sep {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(170, 207, 188, 0.15), transparent);
+    margin: 0 24px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "mood": "architectural",
+  "logoBackdrop": "framed",
+  "atmosphere": 70
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  const moodCopy = {
+    architectural: { eyebrow: "A temporary online clipboard", h1Tail: <>paste, share,<br/><span className="accent">auto-expire.</span></> },
+    editorial:     { eyebrow: "An online clipboard", h1Tail: <>paste, share,<br/><span className="accent">auto-expire.</span></> },
+    soft:          { eyebrow: "Online clipboard", h1Tail: <>paste, share,<br/><span className="accent">auto-expire.</span></> },
+  }[t.mood];
+
+  const gridAlpha = (t.atmosphere / 100) * 0.08;
+  const hatchVisible = t.atmosphere > 60;
+
+  const ogStyle = {
+    '--grid-alpha': gridAlpha,
+  };
+
+  return (
+    <>
+      <div className={`og mood-${t.mood}`} id="og" style={ogStyle}>
+        <div className="grid"></div>
+        {hatchVisible && <div className="hatch"></div>}
+        {t.logoBackdrop === 'spotlight' && <div className="halo"></div>}
+
+        <div className="chrome">
+          <div></div>
+          <div className="meta"><span className="dot"></span>No signup required</div>
+        </div>
+
+        <div className="content">
+          <div className="left">
+            <div className="eyebrow-plain">{moodCopy.eyebrow}</div>
+            <h1>{moodCopy.h1Tail}</h1>
+            <p className="lede">Named spaces for text and files.</p>
+          </div>
+
+          <div className="right">
+            <div className={`logo-frame frame-${t.logoBackdrop}`}>
+              {t.logoBackdrop === 'framed' && <>
+                <span className="tick tl"></span>
+                <span className="tick tr"></span>
+                <span className="tick bl"></span>
+                <span className="tick br"></span>
+              </>}
+              <img src="logo-transparent.png" alt="Kliboard logo" />
+            </div>
+          </div>
+        </div>
+
+        <div className="footer">
+          <span className="url">kliboard</span>
+          <span className="sep"></span>
+          <span>© 2026</span>
+        </div>
+      </div>
+
+      <TweaksPanel>
+        <TweakSection label="Mood" />
+        <TweakRadio
+          label="Tone"
+          value={t.mood}
+          options={['architectural', 'editorial', 'soft']}
+          onChange={(v) => setTweak('mood', v)}
+        />
+
+        <TweakSection label="Logo presentation" />
+        <TweakRadio
+          label="Backdrop"
+          value={t.logoBackdrop}
+          options={['framed', 'bare', 'spotlight']}
+          onChange={(v) => setTweak('logoBackdrop', v)}
+        />
+
+        <TweakSection label="Atmosphere" />
+        <TweakSlider
+          label="Texture"
+          value={t.atmosphere}
+          min={0} max={100} step={5} unit="%"
+          onChange={(v) => setTweak('atmosphere', v)}
+        />
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

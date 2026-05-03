@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Kliboard.V2",
     description:
       "Temporary text clipboard. Create, share, and auto-expire — no signup required.",
