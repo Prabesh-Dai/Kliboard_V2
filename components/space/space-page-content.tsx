@@ -782,9 +782,9 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                         animate="visible"
                         exit="exit"
                         transition={{ duration: DURATION.base }}
-                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/80 backdrop-blur-[2px]"
+                        className="absolute inset-0 z-20 flex flex-row md:flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/80 backdrop-blur-[2px]"
                       >
-                        <Lock className="h-5 w-5 text-muted-foreground" />
+                        <Lock className="h-3.5 w-3.5 md:h-5 md:w-5 text-muted-foreground" />
                         <p className="text-xs font-medium text-muted-foreground">
                           {!user ? "Log in to upload files" : "Uploads locked by owner"}
                         </p>

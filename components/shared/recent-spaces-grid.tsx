@@ -36,14 +36,6 @@ function getDescription(content: string | null, fileCount: number): string {
   return "Empty space";
 }
 
-function CardLeadIcon({ Icon }: { Icon: React.ComponentType<{ className?: string }> }) {
-  const { pending } = useLinkStatus();
-  if (pending) {
-    return <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />;
-  }
-  return <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />;
-}
-
 function DialogSpaceRow({
   space,
   showLock,
@@ -52,9 +44,10 @@ function DialogSpaceRow({
   showLock: boolean;
 }) {
   const Icon = getIcon(!!space.content?.trim(), space.file_count > 0);
+  const { pending } = useLinkStatus();
   return (
-    <div className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-surface-container">
-      <CardLeadIcon Icon={Icon} />
+    <div className="group relative flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-surface-container">
+      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-heading text-sm font-medium">
           {space.name}
@@ -75,6 +68,11 @@ function DialogSpaceRow({
           {format(new Date(space.updated_at), "MMM d")}
         </span>
       </div>
+      {pending && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-surface-container-high/70 backdrop-blur-[1px]">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        </div>
+      )}
     </div>
   );
 }
@@ -87,11 +85,12 @@ function SpaceCard({
   showLock: boolean;
 }) {
   const Icon = getIcon(!!space.content?.trim(), space.file_count > 0);
+  const { pending } = useLinkStatus();
   return (
-    <div className="group flex flex-col gap-2 rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
+    <div className="group relative flex flex-col gap-2 rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <CardLeadIcon Icon={Icon} />
+          <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
           <p className="truncate font-heading text-sm font-medium">
             {space.name}
           </p>
@@ -112,6 +111,11 @@ function SpaceCard({
       <p className="truncate text-xs text-muted-foreground">
         {getDescription(space.content, space.file_count)}
       </p>
+      {pending && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-surface-container-high/70 backdrop-blur-[1px]">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        </div>
+      )}
     </div>
   );
 }
