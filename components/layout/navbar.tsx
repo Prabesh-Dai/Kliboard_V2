@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LayoutGrid, Shield, LogOut } from "lucide-react";
@@ -8,6 +9,16 @@ import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function Navbar() {
   const { user, loading } = useAuth();
@@ -22,6 +33,7 @@ export function Navbar() {
     staleTime: 5 * 60 * 1000,
   });
   const router = useRouter();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -30,6 +42,7 @@ export function Navbar() {
       console.error("Logout failed:", error.message);
       return;
     }
+    setLogoutOpen(false);
     router.push("/");
     router.refresh();
   }
@@ -62,7 +75,7 @@ export function Navbar() {
             )}
             <span className="h-3.5 w-px bg-muted-foreground/25" />
             <button
-              onClick={handleLogout}
+              onClick={() => setLogoutOpen(true)}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               logout
@@ -110,7 +123,7 @@ export function Navbar() {
             <span className="h-3.5 w-px bg-muted-foreground/25" />
             <Tooltip>
               <TooltipTrigger
-                onClick={handleLogout}
+                onClick={() => setLogoutOpen(true)}
                 className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Logout"
               >
@@ -122,6 +135,23 @@ export function Navbar() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Log out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You&apos;ll need to sign in again to manage your spaces.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleLogout}>
+              Log out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }
