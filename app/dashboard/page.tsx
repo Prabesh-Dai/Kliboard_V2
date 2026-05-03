@@ -30,7 +30,7 @@ import {
   screenFade,
   baseTransition,
 } from "@/lib/animations";
-import { Trash2, ExternalLink, Clock, Lock, LockOpen, Loader2 } from "lucide-react";
+import { Trash2, ExternalLink, Clock, Lock, LockOpen, Loader2, Plus } from "lucide-react";
 
 interface UserSpace {
   id: string;
@@ -103,15 +103,18 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
-      <motion.h1
+      <motion.div
         variants={fadeUp}
         initial="hidden"
         animate="visible"
         transition={baseTransition}
-        className="mb-8 font-heading text-2xl font-medium tracking-tight"
+        className="mb-8 flex items-center justify-between"
       >
-        My Spaces
-      </motion.h1>
+        <h1 className="font-heading text-2xl font-medium tracking-tight">My Spaces</h1>
+        <Button nativeButton={false} render={<Link href="/" />}>
+          Create Space
+        </Button>
+      </motion.div>
 
       <AnimatePresence mode="wait">
         {isLoading ? (
@@ -137,12 +140,9 @@ export default function DashboardPage() {
             animate="visible"
             exit="exit"
             transition={baseTransition}
-            className="py-16 text-center"
+            className="py-24 text-center"
           >
-            <p className="text-muted-foreground">You haven&apos;t created any spaces yet.</p>
-            <Button className="mt-6" nativeButton={false} render={<Link href="/" />}>
-              Create a Space
-            </Button>
+            <p className="font-heading text-xl font-medium tracking-tight text-muted-foreground">No spaces yet</p>
           </motion.div>
         ) : (
           <motion.div

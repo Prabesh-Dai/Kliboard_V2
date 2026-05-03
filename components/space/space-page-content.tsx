@@ -722,9 +722,9 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                   </AnimatePresence>
                   <div className="relative flex items-end justify-end gap-2">
                     {(!user && isNewSpace) ? (
-                      <p className="mr-auto flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <Info className="h-3 w-3 shrink-0" />
-                        Space will be read-only<span className="hidden sm:inline">&nbsp;after saving</span>
+                      <p className="mr-auto flex items-center text-[10px] text-muted-foreground">
+                        <Info className="h-3 w-3 shrink-0" />&nbsp;
+                        Space will not be editable<span className="hidden sm:inline">&nbsp;after saving</span>
                       </p>
                     ) : (
                       <DetectedLinks content={content} />
