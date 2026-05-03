@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/components/auth-provider";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import {
   DropdownMenu,
@@ -13,7 +14,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading } = useAuth();
+  const { data: isAdmin } = useQuery({
+    queryKey: ["admin-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/admin");
+      const data = await res.json();
+      return data.isAdmin as boolean;
+    },
+    enabled: Boolean(user),
+    staleTime: 5 * 60 * 1000,
+  });
   const router = useRouter();
 
   async function handleLogout() {

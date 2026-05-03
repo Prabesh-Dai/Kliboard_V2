@@ -34,7 +34,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSpace, useCreateSpace, useUpdateSpace, useToggleLock } from "@/hooks/use-space";
 import { useBatchFileUpload, uploadFilesToStorage } from "@/hooks/use-file-upload";
 import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/components/auth-provider";
 import { FileUpload } from "@/components/space/file-upload";
 import { FileList } from "@/components/space/file-list";
 import type { PendingFile } from "@/components/space/file-list";
@@ -96,7 +96,7 @@ function hasMarkdown(text: string): boolean {
 
 export default function SpacePage() {
   const { name } = useParams<{ name: string }>();
-  const { user, isAdmin: userIsAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const isAnon = !authLoading && !user;
   const {
     data: space,
@@ -170,8 +170,8 @@ export default function SpacePage() {
 
   const isOwner = Boolean(user && space?.owner_id === user.id);
   const isLocked = space?.is_locked ?? true;
-  const canModify = isNewSpace || isOwner || (Boolean(user) && !isLocked) || userIsAdmin;
-  const canToggleLock = isOwner || userIsAdmin;
+  const canModify = isNewSpace || isOwner || (Boolean(user) && !isLocked);
+  const canToggleLock = isOwner;
 
   const hasPendingFiles = Boolean(pendingFiles.length);
   const hasContent = Boolean(content.trim());
@@ -575,7 +575,6 @@ export default function SpacePage() {
                     isSaved={Boolean(space)}
                     duration={duration}
                     onDurationChange={canModify ? setDuration : undefined}
-                    isAdmin={userIsAdmin}
                     isAnon={isAnon}
                   />
                 </div>

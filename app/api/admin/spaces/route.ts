@@ -37,8 +37,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const spaces = data ?? [];
+  const ownerIds = [...new Set(spaces.map((s) => s.owner_id).filter(Boolean))] as string[];
+  const emailMap = new Map<string, string>();
+
+  if (ownerIds.length) {
+    const { data: usersData } = await admin.auth.admin.listUsers();
+    if (usersData?.users) {
+      for (const u of usersData.users) {
+        if (ownerIds.includes(u.id) && u.email) {
+          emailMap.set(u.id, u.email);
+        }
+      }
+    }
+  }
+
+  const enriched = spaces.map((space) => ({
+    ...space,
+    owner_email: space.owner_id ? emailMap.get(space.owner_id) ?? null : null,
+  }));
+
   return NextResponse.json({
-    spaces: data ?? [],
+    spaces: enriched,
     total: count ?? 0,
     page,
     totalPages: Math.ceil((count ?? 0) / limit),

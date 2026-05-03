@@ -5,10 +5,10 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRecentSpaces } from "@/hooks/use-space";
-import { useAuth } from "@/hooks/use-auth";
+import { useRecentSpaces, useAllRecentSpaces } from "@/hooks/use-space";
+import { useAuth } from "@/components/auth-provider";
 import { fadeUp, baseTransition } from "@/lib/animations";
-import { FileText, Paperclip, FolderOpen, CircleDashed, Lock, LockOpen } from "lucide-react";
+import { FileText, Paperclip, FolderOpen, CircleDashed, Lock, LockOpen, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -78,7 +78,10 @@ export function RecentSpacesGrid() {
   const { user } = useAuth();
   const showLock = Boolean(user);
   const [open, setOpen] = useState(false);
-  const hasMore = !isLoading && spaces && spaces.length > GRID_LIMIT;
+  const { data: allSpaces, isLoading: allLoading } = useAllRecentSpaces(open);
+  const hasMore = !isLoading && spaces && spaces.length >= GRID_LIMIT;
+
+  const dialogSpaces = allSpaces ?? spaces;
 
   return (
     <>
@@ -129,42 +132,48 @@ export function RecentSpacesGrid() {
             <DialogTitle>Recent spaces</DialogTitle>
           </DialogHeader>
           <div className="-mx-5 min-h-0 flex-1 overflow-y-auto px-5">
-            <div className="flex flex-col gap-2">
-              {spaces?.map((space) => (
-                <Link
-                  key={space.id}
-                  href={`/space/${space.name}`}
-                  onClick={() => setOpen(false)}
-                >
-                  <div className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-surface-container">
-                    {(() => {
-                      const Icon = getIcon(!!space.content?.trim(), space.file_count > 0);
-                      return <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />;
-                    })()}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-heading text-sm font-medium">
-                        {space.name}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {getDescription(space.content, space.file_count)}
-                      </p>
+            {allLoading && !allSpaces ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {dialogSpaces?.map((space) => (
+                  <Link
+                    key={space.id}
+                    href={`/space/${space.name}`}
+                    onClick={() => setOpen(false)}
+                  >
+                    <div className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-surface-container">
+                      {(() => {
+                        const Icon = getIcon(!!space.content?.trim(), space.file_count > 0);
+                        return <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />;
+                      })()}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-heading text-sm font-medium">
+                          {space.name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {getDescription(space.content, space.file_count)}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {showLock && (
+                          space.is_locked ? (
+                            <Lock className="h-3 w-3 text-muted-foreground/40" />
+                          ) : (
+                            <LockOpen className="h-3 w-3 text-muted-foreground/40" />
+                          )
+                        )}
+                        <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/40">
+                          {format(new Date(space.updated_at), "MMM d")}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {showLock && (
-                        space.is_locked ? (
-                          <Lock className="h-3 w-3 text-muted-foreground/40" />
-                        ) : (
-                          <LockOpen className="h-3 w-3 text-muted-foreground/40" />
-                        )
-                      )}
-                      <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/40">
-                        {format(new Date(space.updated_at), "MMM d")}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

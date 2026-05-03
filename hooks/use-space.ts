@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { POLLING_INTERVAL_MS } from "@/lib/constants";
 
 interface Space {
   id: string;
@@ -147,5 +146,20 @@ export function useRecentSpaces() {
       }
       return res.json() as Promise<RecentSpace[]>;
     },
+  });
+}
+
+export function useAllRecentSpaces(enabled: boolean) {
+  return useQuery({
+    queryKey: ["recent-spaces", "all"],
+    queryFn: async () => {
+      const res = await fetch("/api/spaces/recent?limit=100");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error ?? res.statusText);
+      }
+      return res.json() as Promise<RecentSpace[]>;
+    },
+    enabled,
   });
 }

@@ -19,6 +19,7 @@ interface AdminSpace {
   duration: number;
   expires_at: string;
   owner_id: string | null;
+  owner_email: string | null;
   is_locked: boolean;
   created_at: string;
   updated_at: string;
@@ -71,6 +72,25 @@ export function useAdminUsers() {
       const res = await fetch("/api/admin/users");
       if (!res.ok) throw new Error("Failed to fetch users");
       return res.json();
+    },
+  });
+}
+
+export function usePurgeExpired() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/purge-expired", { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to purge expired spaces");
+      }
+      return res.json() as Promise<{ deleted: number }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-spaces"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     },
   });
 }

@@ -4,25 +4,30 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { spaceNameSchema } from "@/lib/schemas/space.schema";
+import { SPACE_NAME_MIN, SPACE_NAME_MAX, RESERVED_NAMES } from "@/lib/constants";
 import { errorVariants, baseTransition } from "@/lib/animations";
 import { CircleAlert } from "lucide-react";
+
+const SPACE_NAME_REGEX = /^[a-zA-Z][a-zA-Z-]*[a-zA-Z]$/;
+
+function validateSpaceName(value: string): string {
+  if (value.length < SPACE_NAME_MIN) return `Name must be at least ${SPACE_NAME_MIN} characters`;
+  if (value.length > SPACE_NAME_MAX) return `Name must be at most ${SPACE_NAME_MAX} characters`;
+  if (!SPACE_NAME_REGEX.test(value)) return "Only letters and hyphens allowed";
+  if (RESERVED_NAMES.includes(value.toLowerCase())) return "This name is reserved";
+  return "";
+}
 
 export function SpaceEditor() {
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
   const router = useRouter();
 
-  function validateName(value: string) {
-    const result = spaceNameSchema.safeParse(value);
-    setNameError(result.success ? "" : result.error.issues[0].message);
-  }
-
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const result = spaceNameSchema.safeParse(name);
-    if (!result.success) {
-      setNameError(result.error.issues[0].message);
+    const error = validateSpaceName(name);
+    if (error) {
+      setNameError(error);
       return;
     }
     router.push(`/space/${name.toLowerCase()}`);
@@ -39,7 +44,7 @@ export function SpaceEditor() {
           value={name}
           onChange={(e) => {
             setName(e.target.value);
-            if (e.target.value) validateName(e.target.value);
+            if (e.target.value) setNameError(validateSpaceName(e.target.value));
           }}
           className="h-10 border-0 font-heading bg-transparent text-sm shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
         />

@@ -25,12 +25,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/components/auth-provider";
+import { useQuery } from "@tanstack/react-query";
 import {
   useAdminStats,
   useAdminSpaces,
   useAdminUsers,
   useAdminDeleteSpaces,
+  usePurgeExpired,
 } from "@/hooks/use-admin";
 import {
   LayoutDashboard,
@@ -62,7 +64,17 @@ function formatBytes(bytes: number): string {
 }
 
 export default function AdminPage() {
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { data: isAdmin, isLoading: adminLoading } = useQuery({
+    queryKey: ["admin-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/admin");
+      const data = await res.json();
+      return data.isAdmin as boolean;
+    },
+    enabled: Boolean(user),
+    staleTime: 5 * 60 * 1000,
+  });
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [spacePage, setSpacePage] = useState(1);
@@ -75,12 +87,13 @@ export default function AdminPage() {
   const spaces = useAdminSpaces(spacePage, search);
   const users = useAdminUsers();
   const deleteSpaces = useAdminDeleteSpaces();
+  const purgeExpired = usePurgeExpired();
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
+    if (!authLoading && !adminLoading && (!user || !isAdmin)) {
       router.push("/");
     }
-  }, [user, authLoading, isAdmin, router]);
+  }, [user, authLoading, isAdmin, adminLoading, router]);
 
   function handleSearch() {
     setSearch(searchInput);
@@ -187,6 +200,40 @@ export default function AdminPage() {
               ))}
             </div>
           ) : null}
+          {stats.data && stats.data.expiredSpaces > 0 && (
+            <div className="flex items-center justify-between rounded-lg bg-surface-container-low p-5">
+              <div>
+                <p className="text-sm font-medium">
+                  {stats.data.expiredSpaces} expired space{stats.data.expiredSpaces !== 1 ? "s" : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Remove all expired spaces and their files
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={purgeExpired.isPending}
+                onClick={() => {
+                  purgeExpired.mutate(undefined, {
+                    onSuccess: (data) => {
+                      toast.success(`Purged ${data.deleted} expired space${data.deleted !== 1 ? "s" : ""}`);
+                    },
+                    onError: (err) => {
+                      toast.error(err instanceof Error ? err.message : "Purge failed");
+                    },
+                  });
+                }}
+              >
+                {purgeExpired.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                {purgeExpired.isPending ? "Purging..." : "Purge expired"}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -265,7 +312,7 @@ export default function AdminPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <Link
-                            href={`/space/${space.name}`}
+                            href={`/admin/${space.name}`}
                             className="font-heading font-medium tracking-tight hover:text-primary"
                           >
                             {space.name}
@@ -294,6 +341,8 @@ export default function AdminPage() {
                           )}
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
+                          {space.owner_email ?? "anonymous"}
+                          {" · "}
                           {formatDistanceToNow(new Date(space.updated_at), {
                             addSuffix: true,
                           })}
@@ -310,10 +359,10 @@ export default function AdminPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               className="cursor-pointer"
-                              onClick={() => router.push(`/space/${space.name}`)}
+                              onClick={() => router.push(`/admin/${space.name}`)}
                             >
                               <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                              Open space
+                              Edit space
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               variant="destructive"

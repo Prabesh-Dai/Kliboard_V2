@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/components/auth-provider";
 import { useDeleteSpace } from "@/hooks/use-space";
 import { createClient } from "@/lib/supabase/client";
 import {
