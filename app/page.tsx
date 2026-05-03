@@ -11,7 +11,7 @@ export default function Home() {
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      className="flex min-h-[calc(100dvh-7rem)] flex-col items-center px-6 pt-24 sm:pt-[18vh]"
+      className="flex min-h-full flex-col items-center px-6 pt-24 sm:pt-[18vh]"
     >
       <motion.h1
         variants={fadeUp}

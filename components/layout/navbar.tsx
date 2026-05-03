@@ -48,7 +48,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-surface-dim/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
+    <header className="sticky top-0 z-50 w-full bg-surface-dim pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link
           href="/"

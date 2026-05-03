@@ -9,22 +9,10 @@ export function Footer() {
         </p>
         <div className="flex items-center gap-6">
           <Link
-            href="#"
+            href="/about"
             className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
           >
-            privacy
-          </Link>
-          <Link
-            href="#"
-            className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            terms
-          </Link>
-          <Link
-            href="#"
-            className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            support
+            about
           </Link>
         </div>
       </div>

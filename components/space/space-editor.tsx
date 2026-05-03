@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,16 @@ function validateSpaceName(value: string): string {
 export function SpaceEditor() {
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,13 +49,13 @@ export function SpaceEditor() {
         className="flex items-center gap-2 rounded-lg bg-surface-container-high p-2 pl-4 ring-1 ring-ghost-border transition-colors focus-within:ring-primary/30"
       >
         <Input
-          placeholder="Or enter an existing one..."
+          placeholder={isMobile ? "Space name…" : "Or enter an existing one..."}
           value={name}
           onChange={(e) => {
             setName(e.target.value);
             if (e.target.value) setNameError(validateSpaceName(e.target.value));
           }}
-          className="h-10 border-0 font-heading bg-transparent text-sm shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
+          className="h-10 border-0 font-heading bg-transparent text-base md:text-sm shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
         />
         <button
           type="submit"

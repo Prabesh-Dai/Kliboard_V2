@@ -711,7 +711,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                       >
                         <Textarea
                           ref={textareaRef}
-                          className="min-h-48 max-h-[60dvh] resize-none border-0 bg-transparent px-0 py-0 font-heading text-sm shadow-none field-sizing-content overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
+                          className="min-h-48 max-h-[60dvh] resize-none border-0 bg-transparent px-0 py-0 font-heading text-base md:text-sm shadow-none field-sizing-content overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
                           placeholder="Start typing here..."
                           value={content}
                           onChange={(e) => canModify && setContent(e.target.value)}
