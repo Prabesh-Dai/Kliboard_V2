@@ -45,30 +45,30 @@ function SpaceCard({
 }) {
   const Icon = getIcon(!!space.content?.trim(), space.file_count > 0);
   return (
-    <div className="group flex flex-col gap-3 rounded-lg bg-surface-container-low p-5 transition-colors hover:bg-surface-container">
-      <div className="flex items-center justify-between">
-        <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-        {showLock && (
-          space.is_locked ? (
-            <Lock className="h-3 w-3 text-muted-foreground/40" />
-          ) : (
-            <LockOpen className="h-3 w-3 text-muted-foreground/40" />
-          )
-        )}
-      </div>
-      <div className="flex items-end justify-between gap-2">
-        <div className="min-w-0">
+    <div className="group flex flex-col gap-2 rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
           <p className="truncate font-heading text-sm font-medium">
             {space.name}
           </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {getDescription(space.content, space.file_count)}
-          </p>
         </div>
-        <span className="shrink-0 text-[9px] font-medium uppercase tracking-wider text-muted-foreground/40">
-          {format(new Date(space.updated_at), "MMM d")}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {showLock && (
+            space.is_locked ? (
+              <Lock className="h-3 w-3 text-muted-foreground/40" />
+            ) : (
+              <LockOpen className="h-3 w-3 text-muted-foreground/40" />
+            )
+          )}
+          <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/40">
+            {format(new Date(space.updated_at), "MMM d")}
+          </span>
+        </div>
       </div>
+      <p className="truncate text-xs text-muted-foreground">
+        {getDescription(space.content, space.file_count)}
+      </p>
     </div>
   );
 }
