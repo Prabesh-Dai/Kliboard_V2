@@ -7,18 +7,20 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { name } = await params;
 
+  const description = `View, edit, or share the "${name}" space on Kliboard — a temporary clipboard for text and files that auto-deletes after a set duration. No signup required.`;
+
   return {
-    title: name,
-    description: `View and edit the "${name}" space on Kliboard V2.0 — temporary, shareable text clipboard.`,
+    title: `${name} — Shared Clipboard Space`,
+    description,
     openGraph: {
-      title: `${name} | Kliboard.V2`,
-      description: `View and edit the "${name}" space — temporary, shareable text clipboard.`,
+      title: `${name} — Shared Clipboard Space on Kliboard`,
+      description,
       type: "website",
     },
     twitter: {
-      card: "summary",
-      title: `${name} | Kliboard.V2`,
-      description: `View and edit the "${name}" space — temporary, shareable text clipboard.`,
+      card: "summary_large_image",
+      title: `${name} — Shared Clipboard Space on Kliboard`,
+      description,
     },
   };
 }

@@ -19,14 +19,14 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://kliboard.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://kliboard-v2.vercel.app"
   ),
   title: {
-    default: "Kliboard",
+    default: "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes",
     template: "%s | Kliboard",
   },
   description:
-    "Temporary text clipboard. Create named spaces, paste text, share via space name. Auto-deletes after your chosen duration — no signup required.",
+    "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.",
   keywords: [
     "clipboard",
     "temporary",
@@ -38,18 +38,18 @@ export const metadata: Metadata = {
     "kliboard-v2",
   ],
   openGraph: {
-    title: "Kliboard.V2",
+    title: "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes",
     description:
-      "Temporary text clipboard. Create, share, and auto-expire — no signup required.",
-    siteName: "Kliboard.V2",
+      "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.",
+    siteName: "Kliboard",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kliboard.V2",
+    title: "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes",
     description:
-      "Temporary text clipboard. Create, share, and auto-expire — no signup required.",
+      "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.",
   },
   robots: {
     index: true,
