@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function Navbar() {
   const { user, loading } = useAuth();
@@ -66,16 +67,20 @@ export function Navbar() {
             >
               logout
             </button>
+            <ThemeToggle />
           </div>
         )}
 
         {!loading && !user && (
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            sign in
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/login"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              sign in
+            </Link>
+            <ThemeToggle />
+          </div>
         )}
 
         {!loading && user && (
@@ -113,6 +118,7 @@ export function Navbar() {
               </TooltipTrigger>
               <TooltipContent>logout</TooltipContent>
             </Tooltip>
+            <ThemeToggle />
           </div>
         )}
       </div>

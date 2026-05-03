@@ -7,6 +7,7 @@ export const DURATION = {
   base: 0.2,
   slow: 0.25,
   medium: 0.35,
+  themeSwitch: 0.4,
 } as const;
 
 export const baseTransition: Transition = {
