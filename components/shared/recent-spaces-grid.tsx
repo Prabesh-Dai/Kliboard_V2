@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { motion } from "motion/react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,6 +36,49 @@ function getDescription(content: string | null, fileCount: number): string {
   return "Empty space";
 }
 
+function CardLeadIcon({ Icon }: { Icon: React.ComponentType<{ className?: string }> }) {
+  const { pending } = useLinkStatus();
+  if (pending) {
+    return <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />;
+  }
+  return <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />;
+}
+
+function DialogSpaceRow({
+  space,
+  showLock,
+}: {
+  space: { id: string; name: string; content: string; file_count: number; updated_at: string; is_locked: boolean };
+  showLock: boolean;
+}) {
+  const Icon = getIcon(!!space.content?.trim(), space.file_count > 0);
+  return (
+    <div className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-surface-container">
+      <CardLeadIcon Icon={Icon} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-heading text-sm font-medium">
+          {space.name}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">
+          {getDescription(space.content, space.file_count)}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {showLock && (
+          space.is_locked ? (
+            <Lock className="h-3 w-3 text-muted-foreground/40" />
+          ) : (
+            <LockOpen className="h-3 w-3 text-muted-foreground/40" />
+          )
+        )}
+        <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/40">
+          {format(new Date(space.updated_at), "MMM d")}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function SpaceCard({
   space,
   showLock,
@@ -48,7 +91,7 @@ function SpaceCard({
     <div className="group flex flex-col gap-2 rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+          <CardLeadIcon Icon={Icon} />
           <p className="truncate font-heading text-sm font-medium">
             {space.name}
           </p>
@@ -144,32 +187,7 @@ export function RecentSpacesGrid() {
                     href={`/space/${space.name}`}
                     onClick={() => setOpen(false)}
                   >
-                    <div className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-surface-container">
-                      {(() => {
-                        const Icon = getIcon(!!space.content?.trim(), space.file_count > 0);
-                        return <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />;
-                      })()}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-heading text-sm font-medium">
-                          {space.name}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {getDescription(space.content, space.file_count)}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {showLock && (
-                          space.is_locked ? (
-                            <Lock className="h-3 w-3 text-muted-foreground/40" />
-                          ) : (
-                            <LockOpen className="h-3 w-3 text-muted-foreground/40" />
-                          )
-                        )}
-                        <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/40">
-                          {format(new Date(space.updated_at), "MMM d")}
-                        </span>
-                      </div>
-                    </div>
+                    <DialogSpaceRow space={space} showLock={showLock} />
                   </Link>
                 ))}
               </div>

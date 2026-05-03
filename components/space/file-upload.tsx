@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
-import { Upload, X, FileText, FileSpreadsheet, FileIcon, Check } from "lucide-react";
+import { Upload, X, FileText, FileSpreadsheet, FileIcon, Check, FolderOpen } from "lucide-react";
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
 import { fileItemVariants, baseTransition } from "@/lib/animations";
 import type { PendingFile } from "@/components/space/file-list";
@@ -101,7 +101,7 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
         dragging
           ? "border-primary/40 bg-primary/5"
           : "border-ghost-border"
-      } ${pendingFiles.length > 0 ? "p-4" : "items-center justify-center p-10 text-center"}`}
+      } ${pendingFiles.length > 0 ? "p-4" : "p-3 md:items-center md:justify-center md:p-10 md:text-center"}`}
     >
       {dragging && pendingFiles.length > 0 && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/90 backdrop-blur-[2px]">
@@ -175,25 +175,47 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
         </div>
       ) : full ? (
         <>
-          <p className="text-sm font-medium text-muted-foreground">File limit reached</p>
-          <p className="mt-1.5 text-xs text-muted-foreground">Maximum files per space</p>
+          <div className="flex items-center gap-2.5 md:hidden">
+            <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <p className="text-sm font-medium text-muted-foreground">File limit reached</p>
+          </div>
+          <p className="hidden text-sm font-medium text-muted-foreground md:block">File limit reached</p>
+          <p className="mt-1.5 hidden text-xs text-muted-foreground md:block">Maximum files per space</p>
         </>
       ) : (
         <>
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container-high">
-            <Upload className="h-5 w-5 text-primary/70" />
+          <div className="flex items-center justify-between gap-3 md:hidden">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
+                <Upload className="h-4 w-4 text-primary/70" />
+              </div>
+              <p className="truncate font-heading text-sm font-medium">Upload Files</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
+            >
+              <FolderOpen className="h-3 w-3" />
+              Browse
+            </button>
           </div>
-          <p className="font-heading text-sm font-medium">Upload Files</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            Drag, drop, or paste images here
-          </p>
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="mt-5 cursor-pointer rounded-md px-5 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
-          >
-            Browse Files
-          </button>
+          <div className="hidden flex-col items-center md:flex">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container-high">
+              <Upload className="h-5 w-5 text-primary/70" />
+            </div>
+            <p className="font-heading text-sm font-medium">Upload Files</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              Drag, drop, or paste images here
+            </p>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="mt-5 cursor-pointer rounded-md px-5 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
+            >
+              Browse Files
+            </button>
+          </div>
         </>
       )}
       <input

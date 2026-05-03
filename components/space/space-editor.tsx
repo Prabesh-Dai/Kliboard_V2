@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { SPACE_NAME_MIN, SPACE_NAME_MAX, RESERVED_NAMES } from "@/lib/constants";
-import { errorVariants, baseTransition } from "@/lib/animations";
-import { CircleAlert } from "lucide-react";
+import { errorVariants, switchVariants, baseTransition, DURATION, EASE_OUT } from "@/lib/animations";
+import { CircleAlert, Loader2 } from "lucide-react";
 
 const SPACE_NAME_REGEX = /^[a-zA-Z][a-zA-Z-]*[a-zA-Z]$/;
 
@@ -22,6 +22,7 @@ export function SpaceEditor() {
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   useEffect(() => {
@@ -39,7 +40,9 @@ export function SpaceEditor() {
       setNameError(error);
       return;
     }
-    router.push(`/space/${name.toLowerCase()}`);
+    startTransition(() => {
+      router.push(`/space/${name.toLowerCase()}`);
+    });
   }
 
   return (
@@ -59,9 +62,29 @@ export function SpaceEditor() {
         />
         <button
           type="submit"
-          className="h-10 shrink-0 rounded-md bg-linear-to-br from-primary to-primary-container px-6 text-xs font-medium uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90"
+          disabled={isPending}
+          className="flex h-10 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-primary to-primary-container px-6 text-xs font-medium uppercase tracking-widest text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-80"
         >
-          enter space
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={isPending ? "loading" : "idle"}
+              variants={switchVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={{ duration: DURATION.fast, ease: EASE_OUT }}
+              className="flex items-center gap-1.5 whitespace-nowrap"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  entering…
+                </>
+              ) : (
+                "enter space"
+              )}
+            </motion.span>
+          </AnimatePresence>
         </button>
       </form>
       <div className="mt-2 h-3.5">

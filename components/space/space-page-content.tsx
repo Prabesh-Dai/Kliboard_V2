@@ -602,7 +602,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
 
               <motion.div variants={fadeUp} transition={baseTransition} className="mb-10 grid gap-5 md:grid-cols-[1fr_320px]">
                 <div
-                  className="relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-lg bg-surface-container-low p-6 ring-1 ring-ghost-border transition-shadow focus-within:ring-primary/30"
+                  className="relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-lg bg-surface-container-low p-4 pt-2 ring-1 ring-ghost-border transition-shadow focus-within:ring-primary/30 md:p-6"
                   onClick={(e) => {
                     if (canModify && !(e.target as HTMLElement).closest("button")) {
                       textareaRef.current?.focus();
@@ -694,7 +694,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                         animate="visible"
                         exit="exit"
                         transition={{ duration: DURATION.base, ease: EASE_OUT }}
-                        className="min-h-48 max-h-[60dvh] overflow-y-auto"
+                        className="min-h-32 md:min-h-48 max-h-[35dvh] md:max-h-[60dvh] overflow-y-auto"
                       >
                         <Suspense fallback={<Skeleton className="h-full w-full" />}>
                           <MarkdownRenderer content={content} />
@@ -711,7 +711,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                       >
                         <Textarea
                           ref={textareaRef}
-                          className="min-h-48 max-h-[60dvh] resize-none border-0 bg-transparent px-0 py-0 font-heading text-base md:text-sm shadow-none field-sizing-content overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
+                          className="min-h-32 md:min-h-48 max-h-[35dvh] md:max-h-[60dvh] resize-none border-0 bg-transparent px-0 py-0 font-heading text-base md:text-sm shadow-none field-sizing-content overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
                           placeholder="Start typing here..."
                           value={content}
                           onChange={(e) => canModify && setContent(e.target.value)}
