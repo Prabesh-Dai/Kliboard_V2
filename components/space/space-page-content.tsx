@@ -114,12 +114,15 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const isAnon = !authLoading && !user;
-  const {
-    data: space,
-    isLoading,
-    error,
-    refetch,
-  } = useSpace(name);
+  const spaceQuery = useSpace(name);
+  const { isLoading, error, refetch } = spaceQuery;
+  const is404 = Boolean(
+    error &&
+      (error as Error & { status?: number }).status === 404 &&
+      spaceQuery.dataUpdatedAt < spaceQuery.errorUpdatedAt
+  );
+  const isNewSpace = is404;
+  const space = is404 ? undefined : spaceQuery.data;
 
   const [content, setContent] = useState("");
   const [duration, setDuration] = useState(5);
@@ -183,8 +186,19 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     setSyncedDuration(space.duration);
   }
 
-  const is404 = error && (error as Error & { status?: number }).status === 404;
-  const isNewSpace = is404;
+  if (is404 && prevSpaceId !== null) {
+    setPrevSpaceId(null);
+    setContent("");
+    setDuration(5);
+    setSyncedContent("");
+    setSyncedDuration(5);
+  }
+
+  useEffect(() => {
+    if (is404) {
+      queryClient.removeQueries({ queryKey: ["files", name] });
+    }
+  }, [is404, name, queryClient]);
 
   const isOwner = Boolean(user && space?.owner_id === user.id);
   const isLocked = space?.is_locked ?? true;
