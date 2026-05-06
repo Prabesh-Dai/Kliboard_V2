@@ -3,16 +3,26 @@
 import { useState, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyUploadError } from "@/lib/upload-errors";
 
 const MAX_CONCURRENT = 3;
+const UPLOAD_TIMEOUT_MS = 60_000;
+const METADATA_TIMEOUT_MS = 30_000;
 
-interface UploadResult {
+export interface UploadItem {
+  id: string;
+  file: File;
+}
+
+export interface UploadResult {
+  id: string;
   filename: string;
   success: boolean;
   error?: string;
 }
 
 export interface StorageUploadResult {
+  id: string;
   filename: string;
   storage_path: string;
   mime_type: string;
@@ -21,34 +31,67 @@ export interface StorageUploadResult {
   error?: string;
 }
 
+interface UploadProgress {
+  completed: number;
+  total: number;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const err = new Error("Request timed out") as Error & { name: string };
+      err.name = "TimeoutError";
+      reject(err);
+    }, ms);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 export async function uploadFilesToStorage(
-  files: File[],
+  items: UploadItem[],
   spaceName: string,
   onProgress?: (completed: number, total: number) => void
 ): Promise<StorageUploadResult[]> {
   const supabase = createClient();
   const results: StorageUploadResult[] = [];
-  const total = files.length;
+  const total = items.length;
 
   onProgress?.(0, total);
 
-  for (const file of files) {
+  for (const { id, file } of items) {
     const path = `${spaceName}/${crypto.randomUUID()}-${file.name}`;
-    const { error } = await supabase.storage
-      .from("space-files")
-      .upload(path, file);
+    let uploadError: unknown;
+    try {
+      const { error } = await withTimeout(
+        supabase.storage.from("space-files").upload(path, file),
+        UPLOAD_TIMEOUT_MS
+      );
+      uploadError = error;
+    } catch (err) {
+      uploadError = err;
+    }
 
-    if (error) {
+    if (uploadError) {
       results.push({
+        id,
         filename: file.name,
         storage_path: path,
         mime_type: file.type,
         size_bytes: file.size,
         success: false,
-        error: error.message,
+        error: friendlyUploadError(uploadError),
       });
     } else {
       results.push({
+        id,
         filename: file.name,
         storage_path: path,
         mime_type: file.type,
@@ -63,11 +106,6 @@ export async function uploadFilesToStorage(
   return results;
 }
 
-interface UploadProgress {
-  completed: number;
-  total: number;
-}
-
 export function useBatchFileUpload() {
   const supabase = createClient();
   const queryClient = useQueryClient();
@@ -75,58 +113,94 @@ export function useBatchFileUpload() {
 
   const mutation = useMutation({
     mutationFn: async ({
-      files,
+      items,
       spaceName,
       spaceId,
     }: {
-      files: File[];
+      items: UploadItem[];
       spaceName: string;
       spaceId: string;
     }) => {
       const results: UploadResult[] = [];
-      setProgress({ completed: 0, total: files.length });
+      setProgress({ completed: 0, total: items.length });
 
-      const queue = [...files];
+      const queue = [...items];
       const inFlight: Promise<void>[] = [];
 
-      async function uploadOne(file: File) {
+      async function uploadOne({ id, file }: UploadItem) {
         const path = `${spaceName}/${crypto.randomUUID()}-${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from("space-files")
-          .upload(path, file);
+        let uploadError: unknown;
+        try {
+          const { error } = await withTimeout(
+            supabase.storage.from("space-files").upload(path, file),
+            UPLOAD_TIMEOUT_MS
+          );
+          uploadError = error;
+        } catch (err) {
+          uploadError = err;
+        }
 
         if (uploadError) {
           results.push({
+            id,
             filename: file.name,
             success: false,
-            error: uploadError.message,
+            error: friendlyUploadError(uploadError),
           });
           setProgress((prev) => ({ ...prev, completed: prev.completed + 1 }));
           return;
         }
 
-        const res = await fetch(`/api/spaces/${spaceName}/files`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: file.name,
-            storage_path: path,
-            mime_type: file.type,
-            size_bytes: file.size,
-            space_id: spaceId,
-          }),
-        });
+        try {
+          const res = await fetch(`/api/spaces/${spaceName}/files`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filename: file.name,
+              storage_path: path,
+              mime_type: file.type,
+              size_bytes: file.size,
+              space_id: spaceId,
+            }),
+            signal: AbortSignal.timeout(METADATA_TIMEOUT_MS),
+          });
 
-        if (!res.ok) {
-          const errorData = await res.json();
+          if (!res.ok) {
+            let serverMessage = "";
+            try {
+              const errorData = await res.json();
+              serverMessage = errorData?.error ?? "";
+            } catch {
+              serverMessage = "";
+            }
+            results.push({
+              id,
+              filename: file.name,
+              success: false,
+              error: friendlyUploadError({ message: serverMessage, status: res.status }),
+            });
+            const { error: removeError } = await supabase.storage
+              .from("space-files")
+              .remove([path]);
+            if (removeError) {
+              console.error("Failed to roll back orphaned upload", removeError);
+            }
+          } else {
+            results.push({ id, filename: file.name, success: true });
+          }
+        } catch (err) {
           results.push({
+            id,
             filename: file.name,
             success: false,
-            error: errorData.error ?? "Failed to save metadata",
+            error: friendlyUploadError(err),
           });
-          await supabase.storage.from("space-files").remove([path]);
-        } else {
-          results.push({ filename: file.name, success: true });
+          const { error: removeError } = await supabase.storage
+            .from("space-files")
+            .remove([path]);
+          if (removeError) {
+            console.error("Failed to roll back orphaned upload", removeError);
+          }
         }
 
         setProgress((prev) => ({ ...prev, completed: prev.completed + 1 }));
@@ -134,8 +208,8 @@ export function useBatchFileUpload() {
 
       async function processQueue() {
         while (queue.length > 0) {
-          const file = queue.shift()!;
-          const task = uploadOne(file);
+          const item = queue.shift()!;
+          const task = uploadOne(item);
           inFlight.push(task);
 
           if (inFlight.length >= MAX_CONCURRENT) {

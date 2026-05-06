@@ -46,6 +46,7 @@ export interface PendingFile {
   file: File;
   previewUrl: string;
   exiting?: boolean;
+  error?: string;
 }
 
 interface FileRecord {

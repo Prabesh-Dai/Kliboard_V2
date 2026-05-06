@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
-import { Upload, X, FileText, FileSpreadsheet, FileIcon, Check, FolderOpen } from "lucide-react";
+import { Upload, X, FileText, FileSpreadsheet, FileIcon, Check, FolderOpen, CircleAlert } from "lucide-react";
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
 import { fileItemVariants, baseTransition } from "@/lib/animations";
 import type { PendingFile } from "@/components/space/file-list";
@@ -139,8 +139,9 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
           )}
           <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
             <AnimatePresence initial={false} mode="popLayout">
-              {(uploading ? [] : pendingFiles).map(({ id, file, exiting }) => {
+              {(uploading ? [] : pendingFiles).map(({ id, file, exiting, error }) => {
                 const Icon = getFileTypeIcon(file.type);
+                const hasError = Boolean(error);
                 return (
                   <motion.div
                     key={id}
@@ -150,22 +151,33 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
                     animate="visible"
                     exit="exit"
                     transition={baseTransition}
-                    className="flex min-w-0 items-center gap-3 rounded-md bg-surface-container-high/50 px-3 py-2"
+                    className={`flex min-w-0 flex-col gap-1 rounded-md px-3 py-2 ${
+                      hasError
+                        ? "bg-destructive/10 ring-1 ring-destructive/30"
+                        : "bg-surface-container-high/50"
+                    }`}
                   >
-                    {exiting ? (
-                      <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    ) : (
-                      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    )}
-                    <p className="min-w-0 flex-1 truncate text-xs">{file.name}</p>
-                    <p className="shrink-0 text-[10px] text-muted-foreground">{formatFileSize(file.size)}</p>
-                    {!exiting && onRemovePending && (
-                      <button
-                        onClick={() => onRemovePending(id)}
-                        className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                    <div className="flex min-w-0 items-center gap-3">
+                      {hasError ? (
+                        <CircleAlert className="h-3.5 w-3.5 shrink-0 text-destructive" />
+                      ) : exiting ? (
+                        <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      ) : (
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      )}
+                      <p className="min-w-0 flex-1 truncate text-xs">{file.name}</p>
+                      <p className="shrink-0 text-[10px] text-muted-foreground">{formatFileSize(file.size)}</p>
+                      {!exiting && onRemovePending && (
+                        <button
+                          onClick={() => onRemovePending(id)}
+                          className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                    {hasError && (
+                      <p className="pl-6.5 text-[10px] leading-snug text-destructive">{error}</p>
                     )}
                   </motion.div>
                 );

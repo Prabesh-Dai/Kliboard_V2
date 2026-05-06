@@ -54,6 +54,7 @@ export function useCreateSpace() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        signal: AbortSignal.timeout(30_000),
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -81,6 +82,7 @@ export function useUpdateSpace(name: string) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        signal: AbortSignal.timeout(30_000),
       });
       if (!res.ok) {
         const errorData = await res.json();

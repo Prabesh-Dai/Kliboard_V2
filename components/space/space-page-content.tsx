@@ -33,6 +33,7 @@ function useCountdown(expiresAt?: string) {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSpace, useCreateSpace, useUpdateSpace, useToggleLock } from "@/hooks/use-space";
 import { useBatchFileUpload, uploadFilesToStorage } from "@/hooks/use-file-upload";
+import { friendlyUploadError } from "@/lib/upload-errors";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth-provider";
 import { FileUpload } from "@/components/space/file-upload";
@@ -298,7 +299,31 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
   }
 
   async function executeSave() {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      const offlineMsg = "You're offline — check your connection and try again";
+      if (pendingFiles.length > 0) {
+        const offlineErrors = new Map<string, string>();
+        for (const p of pendingFiles) offlineErrors.set(p.id, offlineMsg);
+        setPendingFiles((prev) =>
+          prev.map((p) => ({ ...p, error: offlineMsg, exiting: false }))
+        );
+        toast.warning(`Can't save — ${offlineMsg.toLowerCase()}`);
+      } else {
+        toast.error(offlineMsg);
+      }
+      return;
+    }
+
     setIsSubmitting(true);
+    const failedFileErrors = new Map<string, string>();
+    let attemptedFileCount = 0;
+    let warnedOfflineMidSave = false;
+    const handleOffline = () => {
+      if (warnedOfflineMidSave) return;
+      warnedOfflineMidSave = true;
+      toast.warning("Connection lost — waiting to resume");
+    };
+    window.addEventListener("offline", handleOffline);
     try {
       let savedSpace = space;
 
@@ -307,15 +332,16 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
         let uploadedPaths: string[] = [];
 
         if (pendingFiles.length > 0) {
+          attemptedFileCount = pendingFiles.length;
+          setPendingFiles((prev) => prev.map((p) => ({ ...p, error: undefined })));
           setStorageProgress({ completed: 0, total: pendingFiles.length });
           const storageResults = await uploadFilesToStorage(
-            pendingFiles.map((p) => p.file),
+            pendingFiles.map((p) => ({ id: p.id, file: p.file })),
             name,
             (completed, total) => setStorageProgress({ completed, total })
           );
-          const failed = storageResults.filter((r) => !r.success);
-          if (failed.length) {
-            for (const f of failed) toast.error(`${f.filename}: ${f.error}`);
+          for (const r of storageResults) {
+            if (!r.success && r.error) failedFileErrors.set(r.id, r.error);
           }
           const succeeded = storageResults.filter((r) => r.success);
           uploadedPaths = succeeded.map((r) => r.storage_path);
@@ -352,13 +378,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
 
         if (pendingFiles.length > 0) {
           await queryClient.invalidateQueries({ queryKey: ["files", created.name] });
-          const toClear = pendingFiles;
-          setPendingFiles((prev) => prev.map((p) => ({ ...p, exiting: true })));
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          toClear.forEach((p) => {
-            if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
-          });
-          setPendingFiles([]);
+          await reconcilePendingFiles(failedFileErrors);
         }
       } else {
         const updates: {
@@ -372,27 +392,20 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
         }
 
         if (pendingFiles.length > 0 && savedSpace) {
+          attemptedFileCount = pendingFiles.length;
+          setPendingFiles((prev) => prev.map((p) => ({ ...p, error: undefined })));
           const results = await batchUpload.mutateAsync({
-            files: pendingFiles.map((p) => p.file),
+            items: pendingFiles.map((p) => ({ id: p.id, file: p.file })),
             spaceName: savedSpace.name,
             spaceId: savedSpace.id,
           });
 
-          const failed = results.filter((r) => !r.success);
-          if (failed.length) {
-            for (const f of failed) {
-              toast.error(`${f.filename}: ${f.error}`);
-            }
+          for (const r of results) {
+            if (!r.success && r.error) failedFileErrors.set(r.id, r.error);
           }
 
           await queryClient.invalidateQueries({ queryKey: ["files", savedSpace.name] });
-          const toClear = pendingFiles;
-          setPendingFiles((prev) => prev.map((p) => ({ ...p, exiting: true })));
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          toClear.forEach((p) => {
-            if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
-          });
-          setPendingFiles([]);
+          await reconcilePendingFiles(failedFileErrors);
           batchUpload.resetProgress();
         }
       }
@@ -414,19 +427,76 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
           dateInfo = `until ${format(expiresAt, "d MMMM")} at ${time}`;
         }
       }
-      toast.success(`Space saved ${dateInfo}`);
+
+      const failedCount = failedFileErrors.size;
+      if (failedCount === 0) {
+        toast.success(`Space saved ${dateInfo}`);
+      } else if (failedCount === attemptedFileCount) {
+        toast.warning(
+          `Space saved, but no files were uploaded — ${describeFileFailures(failedFileErrors)}`
+        );
+      } else {
+        toast.warning(
+          `Space saved, but ${failedCount} of ${attemptedFileCount} file${attemptedFileCount !== 1 ? "s" : ""} couldn't upload — ${describeFileFailures(failedFileErrors)}`
+        );
+      }
     } catch (err) {
       const status = (err as Error & { status?: number }).status;
       if (status === 409) {
         await refetch();
         return;
       }
-      const msg = err instanceof Error ? err.message : "Save failed";
-      toast.error(msg);
+      const friendly = friendlyUploadError(err);
+      if (attemptedFileCount > 0) {
+        const allErrors = new Map<string, string>();
+        for (const p of pendingFiles) {
+          allErrors.set(p.id, failedFileErrors.get(p.id) ?? friendly);
+        }
+        setPendingFiles((prev) =>
+          prev.map((p) => ({
+            ...p,
+            error: allErrors.get(p.id) ?? p.error,
+            exiting: false,
+          }))
+        );
+        toast.error(`Save failed — ${friendly.toLowerCase()}`);
+      } else {
+        toast.error(friendly);
+      }
     } finally {
+      window.removeEventListener("offline", handleOffline);
       setIsSubmitting(false);
       setStorageProgress({ completed: 0, total: 0 });
+      batchUpload.resetProgress();
     }
+  }
+
+  async function reconcilePendingFiles(failedErrors: Map<string, string>) {
+    setPendingFiles((prev) =>
+      prev.map((p) =>
+        failedErrors.has(p.id)
+          ? { ...p, error: failedErrors.get(p.id), exiting: false }
+          : { ...p, exiting: true }
+      )
+    );
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    setPendingFiles((prev) => {
+      const kept: PendingFile[] = [];
+      for (const p of prev) {
+        if (failedErrors.has(p.id)) {
+          kept.push(p);
+        } else if (p.previewUrl) {
+          URL.revokeObjectURL(p.previewUrl);
+        }
+      }
+      return kept;
+    });
+  }
+
+  function describeFileFailures(failedErrors: Map<string, string>): string {
+    const reasons = Array.from(new Set(failedErrors.values()));
+    if (reasons.length === 1) return reasons[0].toLowerCase();
+    return "see the file list for details";
   }
 
   const existingFileCount = remoteFiles?.length ?? 0;
