@@ -40,6 +40,7 @@ import { useAuth } from "@/components/auth-provider";
 import { FileUpload } from "@/components/space/file-upload";
 import { FileList } from "@/components/space/file-list";
 import type { PendingFile } from "@/components/space/file-list";
+import { AudioRecorder } from "@/components/space/audio-recorder";
 const MarkdownRenderer = lazy(() => import("@/components/space/markdown-renderer").then((m) => ({ default: m.MarkdownRenderer })));
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -252,9 +253,10 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     const mapped: PendingFile[] = newFiles.map((file) => ({
       id: crypto.randomUUID(),
       file,
-      previewUrl: file.type.startsWith("image/")
-        ? URL.createObjectURL(file)
-        : "",
+      previewUrl:
+        file.type.startsWith("image/") || file.type.startsWith("audio/")
+          ? URL.createObjectURL(file)
+          : "",
     }));
     setPendingFiles((prev) => [...prev, ...mapped]);
   }, []);
@@ -846,7 +848,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                         animate="visible"
                         exit="exit"
                         transition={{ duration: DURATION.base, ease: EASE_OUT }}
-                        className="min-h-32 md:min-h-48 max-h-[35dvh] md:max-h-[60dvh] overflow-y-auto"
+                        className="flex-1 min-h-32 md:min-h-48 max-h-[35dvh] md:max-h-[60dvh] overflow-y-auto"
                       >
                         <Suspense fallback={<Skeleton className="h-full w-full" />}>
                           <MarkdownRenderer content={content} />
@@ -860,6 +862,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                         animate="visible"
                         exit="exit"
                         transition={{ duration: DURATION.base, ease: EASE_OUT }}
+                        className="flex-1"
                       >
                         <Textarea
                           ref={textareaRef}
@@ -937,7 +940,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                   </div>
                 </div>
 
-                <div className="relative flex min-w-0 flex-col">
+                <div className="relative isolate flex min-w-0 flex-col gap-5">
                   <AnimatePresence>
                     {!canModify && !isNewSpace && (
                       <motion.div
@@ -946,11 +949,11 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                         animate="visible"
                         exit="exit"
                         transition={{ duration: DURATION.base }}
-                        className="absolute inset-0 z-20 flex flex-row md:flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/80 backdrop-blur-[2px]"
+                        className="pointer-events-auto absolute inset-0 z-30 flex flex-row md:flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/80 backdrop-blur-[2px]"
                       >
                         <Lock className="h-3.5 w-3.5 md:h-5 md:w-5 text-muted-foreground" />
                         <p className="text-xs font-medium text-muted-foreground">
-                          {!user ? "Log in to upload files" : "Uploads locked by owner"}
+                          {!user ? "Log in to add files" : "Uploads locked by owner"}
                         </p>
                       </motion.div>
                     )}
@@ -964,6 +967,11 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                     full={fileSlotsFull}
                     progress={activeUploadProgress}
                     disabled={!canModify && !isNewSpace}
+                  />
+                  <AudioRecorder
+                    onRecorded={(file) => handleFilesSelected([file])}
+                    disabled={fileSlotsFull || (!canModify && !isNewSpace)}
+                    fullWidth
                   />
                 </div>
               </motion.div>

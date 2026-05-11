@@ -39,6 +39,7 @@ import {
   Check,
   Loader2,
   EllipsisVertical,
+  Music,
 } from "lucide-react";
 
 export interface PendingFile {
@@ -82,6 +83,10 @@ function isImageFile(mimeType: string) {
   return IMAGE_TYPES.includes(mimeType);
 }
 
+function isAudioFile(mimeType: string) {
+  return mimeType.startsWith("audio/");
+}
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -93,6 +98,7 @@ function fileUrl(file: Pick<FileRecord, "signed_url">): string {
 }
 
 function getFileTypeIcon(mimeType: string) {
+  if (isAudioFile(mimeType)) return Music;
   if (mimeType === "application/pdf") return FileText;
   if (
     mimeType.includes("spreadsheet") ||
@@ -471,8 +477,9 @@ export function FileList({
           <AnimatePresence initial={false} mode="popLayout">
             {items.map((item) => {
               if (item.kind === "pending") {
-                const { id, file, exiting } = item.data;
+                const { id, file, previewUrl, exiting } = item.data;
                 const Icon = getFileTypeIcon(file.type);
+                const isAudio = isAudioFile(file.type);
                 return (
                   <motion.div
                     key={itemKey(item)}
@@ -482,7 +489,7 @@ export function FileList({
                     animate="visible"
                     exit="exit"
                     transition={baseTransition}
-                    className={`relative flex items-center gap-4 rounded-lg bg-surface-container-low px-4 py-3 ${uploading ? "opacity-60" : ""}`}
+                    className={`relative flex flex-col gap-2 rounded-lg bg-surface-container-low px-4 py-3 ${uploading ? "opacity-60" : ""}`}
                   >
                     {uploading && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-lg">
@@ -496,22 +503,27 @@ export function FileList({
                         )}
                       </div>
                     )}
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{file.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatFileSize(file.size)} &middot; {uploading ? "uploading" : "pending"}
+                        </p>
+                      </div>
+                      {!uploading && (
+                        <button
+                          onClick={() => onRemovePending(id)}
+                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{file.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {formatFileSize(file.size)} &middot; {uploading ? "uploading" : "pending"}
-                      </p>
-                    </div>
-                    {!uploading && (
-                      <button
-                        onClick={() => onRemovePending(id)}
-                        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+                    {isAudio && previewUrl && (
+                      <audio controls preload="metadata" src={previewUrl} className="w-full" />
                     )}
                   </motion.div>
                 );
@@ -520,6 +532,7 @@ export function FileList({
               const file = item.data;
               const Icon = getFileTypeIcon(file.mime_type);
               const isDeleting = deletingId === file.id;
+              const isAudio = isAudioFile(file.mime_type);
               return (
                 <motion.div
                   key={itemKey(item)}
@@ -529,7 +542,7 @@ export function FileList({
                   animate="visible"
                   exit="exit"
                   transition={baseTransition}
-                  className={`group relative flex items-center gap-4 rounded-lg bg-surface-container-low px-4 py-3 ${isDeleting ? "opacity-50" : ""}`}
+                  className={`group relative flex flex-col gap-2 rounded-lg bg-surface-container-low px-4 py-3 ${isDeleting ? "opacity-50" : ""}`}
                 >
                   {isDeleting && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-lg">
@@ -539,21 +552,26 @@ export function FileList({
                       </p>
                     </div>
                   )}
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{file.filename}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatFileSize(file.size_bytes)} &middot;{" "}
+                        {formatDistanceToNow(new Date(file.created_at), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                    <div className={`transition-opacity ${isDeleting ? "pointer-events-none opacity-0" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"}`}>
+                      <FileActionsMenu file={file} canDelete={canDelete} willEmptySpace={willEmptySpace} onOpen={handleOpenRemote} onDownload={handleDownload} onShare={handleShare} onDelete={handleDeleteRemote} isDeleting={deletingId === file.id} isDownloading={downloadingId === file.id} isCopied={copiedId === file.id} />
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{file.filename}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatFileSize(file.size_bytes)} &middot;{" "}
-                      {formatDistanceToNow(new Date(file.created_at), {
-                        addSuffix: true,
-                      })}
-                    </p>
-                  </div>
-                  <div className={`transition-opacity ${isDeleting ? "pointer-events-none opacity-0" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"}`}>
-                    <FileActionsMenu file={file} canDelete={canDelete} willEmptySpace={willEmptySpace} onOpen={handleOpenRemote} onDownload={handleDownload} onShare={handleShare} onDelete={handleDeleteRemote} isDeleting={deletingId === file.id} isDownloading={downloadingId === file.id} isCopied={copiedId === file.id} />
-                  </div>
+                  {isAudio && file.signed_url && (
+                    <audio controls preload="metadata" src={file.signed_url} className="w-full" />
+                  )}
                 </motion.div>
               );
             })}
@@ -573,7 +591,57 @@ export function FileList({
               if (item.kind === "pending") {
                 const { id, file, previewUrl, exiting } = item.data;
                 const isImage = isImageFile(file.type);
+                const isAudio = isAudioFile(file.type);
                 const Icon = getFileTypeIcon(file.type);
+
+                if (isAudio) {
+                  return (
+                    <motion.div
+                      key={itemKey(item)}
+                      layout="position"
+                      variants={fileItemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      transition={baseTransition}
+                      className="group relative col-span-2 flex flex-col gap-2 overflow-hidden rounded-lg bg-surface-container-low p-3 sm:col-span-3 md:col-span-2"
+                    >
+                      {uploading && (
+                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
+                          {exiting ? (
+                            <>
+                              <Check className="h-5 w-5 text-primary" />
+                              <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Done</p>
+                            </>
+                          ) : (
+                            <>
+                              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Uploading</p>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <p className="min-w-0 flex-1 truncate font-heading text-xs font-medium">{file.name}</p>
+                        {!uploading && (
+                          <button
+                            onClick={() => onRemovePending(id)}
+                            className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      {previewUrl && (
+                        <audio controls preload="metadata" src={previewUrl} className="w-full" />
+                      )}
+                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                        {formatFileSize(file.size)} &middot; {uploading ? "uploading" : "pending"}
+                      </p>
+                    </motion.div>
+                  );
+                }
 
                 return (
                   <motion.div
@@ -636,8 +704,47 @@ export function FileList({
 
               const file = item.data;
               const isImage = isImageFile(file.mime_type);
+              const isAudio = isAudioFile(file.mime_type);
               const Icon = getFileTypeIcon(file.mime_type);
               const isDeleting = deletingId === file.id;
+
+              if (isAudio) {
+                return (
+                  <motion.div
+                    key={itemKey(item)}
+                    layout="position"
+                    variants={fileItemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    transition={baseTransition}
+                    className={`group relative col-span-2 flex flex-col gap-2 overflow-hidden rounded-lg bg-surface-container-low p-3 sm:col-span-3 md:col-span-2 ${isDeleting ? "opacity-50" : ""}`}
+                  >
+                    {isDeleting && (
+                      <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
+                        <Loader2 className="h-5 w-5 animate-spin text-destructive" />
+                        <p className="text-[10px] font-medium uppercase tracking-wider text-destructive">
+                          Deleting
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <p className="min-w-0 flex-1 truncate font-heading text-xs font-medium">{file.filename}</p>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <FileActionsMenu file={file} canDelete={canDelete} willEmptySpace={willEmptySpace} onOpen={handleOpenRemote} onDownload={handleDownload} onShare={handleShare} onDelete={handleDeleteRemote} isDeleting={deletingId === file.id} isDownloading={downloadingId === file.id} isCopied={copiedId === file.id} />
+                      </div>
+                    </div>
+                    {file.signed_url && (
+                      <audio controls preload="metadata" src={file.signed_url} className="w-full" />
+                    )}
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                      {formatFileSize(file.size_bytes)} &middot;{" "}
+                      {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })}
+                    </p>
+                  </motion.div>
+                );
+              }
 
               return (
                 <motion.div
