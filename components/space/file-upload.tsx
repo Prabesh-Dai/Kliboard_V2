@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
-import { Upload, X, FileText, FileSpreadsheet, FileIcon, Check, FolderOpen, CircleAlert } from "lucide-react";
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
+import { Upload, X, FileText, FileSpreadsheet, FileIcon, Check, FolderOpen, CircleAlert, Music } from "lucide-react";
+import { ALLOWED_MIME_TYPES, AUDIO_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
 import { fileItemVariants, baseTransition } from "@/lib/animations";
 import type { PendingFile } from "@/components/space/file-list";
 
@@ -15,6 +15,7 @@ function formatFileSize(bytes: number): string {
 }
 
 function getFileTypeIcon(mimeType: string) {
+  if (AUDIO_MIME_TYPES.includes(mimeType) || mimeType.startsWith("audio/")) return Music;
   if (mimeType === "application/pdf") return FileText;
   if (
     mimeType.includes("spreadsheet") ||
@@ -101,7 +102,7 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
         dragging
           ? "border-primary/40 bg-primary/5"
           : "border-ghost-border"
-      } ${pendingFiles.length > 0 ? "p-4" : "p-3 md:items-center md:justify-center md:p-10 md:text-center"}`}
+      } ${pendingFiles.length > 0 ? "p-4" : "p-3 md:items-center md:justify-center md:p-6 md:text-center"}`}
     >
       {dragging && pendingFiles.length > 0 && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/90 backdrop-blur-[2px]">
@@ -217,9 +218,6 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
               <Upload className="h-5 w-5 text-primary/70" />
             </div>
             <p className="font-heading text-sm font-medium">Upload Files</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Drag, drop, or paste images here
-            </p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
