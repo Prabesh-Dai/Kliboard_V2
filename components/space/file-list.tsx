@@ -11,6 +11,7 @@ import { useSpaceFiles } from "@/hooks/use-file-upload";
 import { fileItemVariants, baseTransition, fadeIn, scaleReveal, screenFade } from "@/lib/animations";
 import { SIGNED_URL_TTL_SECONDS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AudioPlayer } from "@/components/space/audio-player";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -523,7 +524,7 @@ export function FileList({
                       )}
                     </div>
                     {isAudio && previewUrl && (
-                      <audio controls preload="metadata" src={previewUrl} className="w-full" />
+                      <AudioPlayer src={previewUrl} />
                     )}
                   </motion.div>
                 );
@@ -570,7 +571,7 @@ export function FileList({
                     </div>
                   </div>
                   {isAudio && file.signed_url && (
-                    <audio controls preload="metadata" src={file.signed_url} className="w-full" />
+                    <AudioPlayer src={file.signed_url} />
                   )}
                 </motion.div>
               );
@@ -604,7 +605,7 @@ export function FileList({
                       animate="visible"
                       exit="exit"
                       transition={baseTransition}
-                      className="group relative col-span-2 flex flex-col gap-2 overflow-hidden rounded-lg bg-surface-container-low p-3 sm:col-span-3 md:col-span-2"
+                      className="group relative flex flex-col overflow-hidden rounded-lg bg-surface-container-low"
                     >
                       {uploading && (
                         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
@@ -621,24 +622,33 @@ export function FileList({
                           )}
                         </div>
                       )}
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <p className="min-w-0 flex-1 truncate font-heading text-xs font-medium">{file.name}</p>
+                      <div className="relative">
+                        {previewUrl ? (
+                          <AudioPlayer
+                            src={previewUrl}
+                            variant="hero"
+                            caption={`${formatFileSize(file.size)} · ${uploading ? "uploading" : "pending"}`}
+                          />
+                        ) : (
+                          <div className="flex aspect-4/3 items-center justify-center">
+                            <Icon className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
                         {!uploading && (
                           <button
                             onClick={() => onRemovePending(id)}
-                            className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
+                            className="absolute top-2 right-2 z-20 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-100 transition-opacity hover:bg-black/70 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
                           >
                             <X className="h-3 w-3" />
                           </button>
                         )}
                       </div>
-                      {previewUrl && (
-                        <audio controls preload="metadata" src={previewUrl} className="w-full" />
-                      )}
-                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
-                        {formatFileSize(file.size)} &middot; {uploading ? "uploading" : "pending"}
-                      </p>
+                      <div className="relative p-3">
+                        <p className="truncate font-heading text-xs font-medium">{file.name}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                          {uploading ? "uploading" : "pending"}
+                        </p>
+                      </div>
                     </motion.div>
                   );
                 }
@@ -718,7 +728,7 @@ export function FileList({
                     animate="visible"
                     exit="exit"
                     transition={baseTransition}
-                    className={`group relative col-span-2 flex flex-col gap-2 overflow-hidden rounded-lg bg-surface-container-low p-3 sm:col-span-3 md:col-span-2 ${isDeleting ? "opacity-50" : ""}`}
+                    className={`group relative flex flex-col overflow-hidden rounded-lg bg-surface-container-low ${isDeleting ? "opacity-50" : ""}`}
                   >
                     {isDeleting && (
                       <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
@@ -728,20 +738,28 @@ export function FileList({
                         </p>
                       </div>
                     )}
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <p className="min-w-0 flex-1 truncate font-heading text-xs font-medium">{file.filename}</p>
-                      <div onClick={(e) => e.stopPropagation()}>
+                    <div className="relative">
+                      {file.signed_url ? (
+                        <AudioPlayer
+                          src={file.signed_url}
+                          variant="hero"
+                          caption={formatFileSize(file.size_bytes)}
+                        />
+                      ) : (
+                        <div className="flex aspect-4/3 items-center justify-center">
+                          <Icon className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative p-3">
+                      <p className="truncate pr-20 font-heading text-xs font-medium">{file.filename}</p>
+                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                        {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })}
+                      </p>
+                      <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
                         <FileActionsMenu file={file} canDelete={canDelete} willEmptySpace={willEmptySpace} onOpen={handleOpenRemote} onDownload={handleDownload} onShare={handleShare} onDelete={handleDeleteRemote} isDeleting={deletingId === file.id} isDownloading={downloadingId === file.id} isCopied={copiedId === file.id} />
                       </div>
                     </div>
-                    {file.signed_url && (
-                      <audio controls preload="metadata" src={file.signed_url} className="w-full" />
-                    )}
-                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
-                      {formatFileSize(file.size_bytes)} &middot;{" "}
-                      {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })}
-                    </p>
                   </motion.div>
                 );
               }

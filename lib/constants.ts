@@ -58,17 +58,29 @@ export const ALLOWED_MIME_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "audio/webm",
   "audio/mp4",
+  "audio/x-m4a",
+  "audio/m4a",
+  "audio/aac",
   "audio/ogg",
   "audio/mpeg",
+  "audio/mp3",
   "audio/wav",
+  "audio/wave",
+  "audio/x-wav",
 ];
 
 export const AUDIO_MIME_TYPES = [
   "audio/webm",
   "audio/mp4",
+  "audio/x-m4a",
+  "audio/m4a",
+  "audio/aac",
   "audio/ogg",
   "audio/mpeg",
+  "audio/mp3",
   "audio/wav",
+  "audio/wave",
+  "audio/x-wav",
 ];
 
 export const MAX_RECORDING_SECONDS = 300;

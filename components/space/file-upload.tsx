@@ -218,9 +218,6 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
               <Upload className="h-5 w-5 text-primary/70" />
             </div>
             <p className="font-heading text-sm font-medium">Upload Files</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Drag, drop, or paste images here
-            </p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
