@@ -43,6 +43,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--error-text": "var(--destructive)",
           "--error-border": "color-mix(in oklab, var(--ghost-border) 50%, var(--destructive))",
           "--border-radius": "var(--radius-md)",
+          "--width": "min(22rem, calc(100vw - 3rem))",
         } as React.CSSProperties
       }
       toastOptions={{

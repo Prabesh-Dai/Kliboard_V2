@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { getAnonClaims, removeAnonClaim } from "@/lib/anon-claims";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ClaimedSpace {
   id: string;
@@ -41,6 +49,8 @@ export function AnonClaimRunner() {
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
   const lastUserId = useRef<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [claimed, setClaimed] = useState<ClaimedSpace[]>([]);
 
   useEffect(() => {
     if (loading || !user) {
@@ -51,7 +61,6 @@ export function AnonClaimRunner() {
     lastUserId.current = user.id;
 
     const pending = getAnonClaims();
-    console.log(`[anon-claim] runner fired for user ${user.id} — ${pending.length} pending claim(s)`, pending.map((c) => c.spaceName));
     if (pending.length === 0) return;
 
     (async () => {
@@ -68,11 +77,8 @@ export function AnonClaimRunner() {
       });
 
       if (successful.length > 0) {
-        toast.success(
-          successful.length === 1
-            ? "Claimed 1 space"
-            : `Claimed ${successful.length} spaces`
-        );
+        setClaimed(successful);
+        setOpen(true);
 
         queryClient.setQueryData<ClaimedSpace[]>(
           ["dashboard-spaces", user.id],
@@ -98,5 +104,40 @@ export function AnonClaimRunner() {
     })();
   }, [user, loading, queryClient]);
 
-  return null;
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            {claimed.length === 1 ? "1 space claimed" : `${claimed.length} spaces claimed`}
+          </p>
+          <DialogTitle className="text-xl">Linked to your account</DialogTitle>
+          <DialogDescription>
+            You can now manage these spaces from your dashboard.
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="flex flex-col gap-2">
+          {claimed.map((space) => (
+            <li key={space.id}>
+              <Link
+                href={`/space/${space.name}`}
+                onClick={() => setOpen(false)}
+                className="group flex items-start justify-between gap-3 rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-heading font-medium text-foreground">
+                    {space.name}
+                  </p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">
+                    {space.content.trim() || "Empty space"}
+                  </p>
+                </div>
+                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
+  );
 }

@@ -28,7 +28,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <TooltipProvider>
             <AnonClaimRunner />
             {children}
-            <Toaster position="bottom-center" offset={16} />
+            <Toaster
+              position="top-right"
+              offset={{
+                top: "calc(env(safe-area-inset-top) + 4.25rem)",
+                right: "max(1.5rem, calc((100vw - 72rem) / 2 + 1.5rem))",
+              }}
+              mobileOffset={{
+                top: "calc(env(safe-area-inset-top) + 4.25rem)",
+                right: "1.5rem",
+                left: "1.5rem",
+              }}
+            />
           </TooltipProvider>
         </MotionConfig>
       </AuthProvider>

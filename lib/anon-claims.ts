@@ -59,9 +59,7 @@ export function addAnonClaim(spaceName: string, token: string) {
     (c) => c.spaceName.toLowerCase() !== spaceName.toLowerCase()
   );
   existing.push({ spaceName: spaceName.toLowerCase(), token, createdAt: Date.now() });
-  const next = pruneExpired(existing);
-  writeRaw(next);
-  console.log(`[anon-claim] stored token for ${spaceName.toLowerCase()} (total: ${next.length})`);
+  writeRaw(pruneExpired(existing));
 }
 
 export function removeAnonClaim(spaceName: string) {
