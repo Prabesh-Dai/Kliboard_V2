@@ -25,12 +25,14 @@ async function claimOne(spaceName: string, token: string): Promise<ClaimedSpace 
       body: JSON.stringify({ token }),
     });
     if (res.ok) return (await res.json()) as ClaimedSpace;
+    const body = await res.text().catch(() => "");
+    console.warn(`[anon-claim] ${spaceName} failed: HTTP ${res.status}`, body);
     if (res.status === 404 || res.status === 409 || res.status === 403) {
       removeAnonClaim(spaceName);
     }
     return null;
   } catch (err) {
-    console.warn("Auto-claim request failed", err);
+    console.warn("[anon-claim] request failed", err);
     return null;
   }
 }
@@ -49,14 +51,13 @@ export function AnonClaimRunner() {
     lastUserId.current = user.id;
 
     const pending = getAnonClaims();
+    console.log(`[anon-claim] runner fired for user ${user.id} — ${pending.length} pending claim(s)`, pending.map((c) => c.spaceName));
     if (pending.length === 0) return;
 
-    let cancelled = false;
     (async () => {
       const results = await Promise.all(
         pending.map((c) => claimOne(c.spaceName, c.token))
       );
-      if (cancelled) return;
 
       const successful: ClaimedSpace[] = [];
       results.forEach((space, idx) => {
@@ -95,10 +96,6 @@ export function AnonClaimRunner() {
         });
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [user, loading, queryClient]);
 
   return null;

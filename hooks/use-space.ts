@@ -69,6 +69,7 @@ export function useCreateSpace() {
       return res.json() as Promise<Space & { claim_token?: string }>;
     },
     onSuccess: (data) => {
+      console.log(`[anon-claim] create response for ${data.name}: claim_token=${data.claim_token ? "present" : "absent"}`);
       if (data.claim_token && data.name) {
         addAnonClaim(data.name, data.claim_token);
       }
