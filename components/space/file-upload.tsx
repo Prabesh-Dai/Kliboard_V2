@@ -215,16 +215,20 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
               Browse
             </button>
           </div>
-          <div className="hidden flex-col items-center md:flex">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container-high">
-              <Upload className="h-5 w-5 text-primary/70" />
-            </div>
+          <Upload
+            strokeWidth={4}
+            className="pointer-events-none absolute inset-0 m-auto hidden h-36 w-36 text-foreground opacity-[0.06] md:block"
+          />
+          <div className="relative hidden flex-col items-center md:flex">
             <p className="font-heading text-sm font-medium">Upload Files</p>
+            <p className="mt-1.5 text-xs font-normal text-muted-foreground/60">Drag. Drop. Paste.</p>
+            <div aria-hidden className="mt-3 h-px w-16 bg-foreground/15" />
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="mt-5 cursor-pointer rounded-md px-5 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
+              className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-surface-container-low px-5 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
             >
+              <FolderOpen className="h-3 w-3" />
               Browse Files
             </button>
           </div>

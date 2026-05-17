@@ -171,7 +171,69 @@
 
 
 [data-sonner-toaster] [data-sonner-toast] {
-  transition: transform 120ms ease-out, opacity 100ms ease-out, height 120ms ease-out !important;
+  padding: 10px 20px !important;
+  border-radius: var(--radius-md) var(--radius-md) 0 var(--radius-md) !important;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease-out, height 200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+[data-sonner-toaster][data-x-position='right'][data-y-position='top'] [data-sonner-toast]:not([data-mounted='true']) {
+  --y: translate3d(120%, 0, 0) !important;
+}
+
+[data-sonner-toaster][data-x-position='right'][data-y-position='top'] [data-sonner-toast][data-mounted='true'][data-front='true']:not([data-removed='true']) {
+  --y: translate3d(0, 0, 0) !important;
+}
+
+[data-sonner-toaster][data-x-position='right'][data-y-position='top'] [data-sonner-toast][data-removed='true'][data-front='true'] {
+  --y: translate3d(120%, 0, 0) !important;
+}
+
+[data-sonner-toast][data-type='success'] {
+  border: 1px solid var(--success-border) !important;
+}
+[data-sonner-toast][data-type='warning'] {
+  border: 1px solid var(--warning-border) !important;
+}
+[data-sonner-toast][data-type='error'] {
+  border: 1px solid var(--error-border) !important;
+}
+
+[data-sonner-toast] {
+  overflow: hidden;
+}
+
+[data-sonner-toast]::after {
+  content: '';
+  position: absolute;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  bottom: 0 !important;
+  height: 1px !important;
+  width: auto !important;
+  background: var(--normal-border);
+  transform-origin: right;
+  animation: toast-progress 5s linear forwards;
+  pointer-events: none;
+}
+
+[data-sonner-toast][data-type='success']::after {
+  background: color-mix(in oklab, var(--primary) 70%, transparent);
+}
+[data-sonner-toast][data-type='warning']::after {
+  background: color-mix(in oklab, var(--warning) 70%, transparent);
+}
+[data-sonner-toast][data-type='error']::after {
+  background: color-mix(in oklab, var(--destructive) 70%, transparent);
+}
+
+[data-sonner-toaster]:hover [data-sonner-toast]::after {
+  animation-play-state: paused;
+}
+
+@keyframes toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
 }
 
 @layer base {

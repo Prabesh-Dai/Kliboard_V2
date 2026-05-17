@@ -1005,7 +1005,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                   </div>
                 </div>
 
-                <div className="relative isolate flex min-w-0 flex-col gap-5">
+                <div className="relative isolate flex min-w-0 flex-col gap-3">
                   <AnimatePresence>
                     {!canModify && !isNewSpace && (
                       <motion.div
