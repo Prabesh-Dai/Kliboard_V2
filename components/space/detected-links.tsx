@@ -102,8 +102,8 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
                 {overflow.map((url) => (
                   <DropdownMenuItem
                     key={url}
+                    render={<a href={normalizeHref(url)} target="_blank" rel="noopener noreferrer" />}
                     className="cursor-pointer"
-                    onClick={() => window.open(normalizeHref(url), "_blank", "noopener,noreferrer")}
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{extractDomain(url)}</span>
@@ -136,8 +136,8 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
                 {urls.map((url) => (
                   <DropdownMenuItem
                     key={url}
+                    render={<a href={normalizeHref(url)} target="_blank" rel="noopener noreferrer" />}
                     className="cursor-pointer"
-                    onSelect={() => window.open(normalizeHref(url), "_blank", "noopener,noreferrer")}
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{extractDomain(url)}</span>
