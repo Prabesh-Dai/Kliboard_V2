@@ -17,39 +17,51 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kliboard.online";
+const siteTitle = "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes";
+const siteDescription =
+  "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://kliboard.online"
-  ),
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes",
+    default: siteTitle,
     template: "%s | Kliboard",
   },
-  description:
-    "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.",
+  description: siteDescription,
+  applicationName: "Kliboard",
+  alternates: {
+    canonical: "/",
+  },
   keywords: [
-    "clipboard",
-    "temporary",
+    "temporary clipboard",
     "text sharing",
-    "paste",
-    "ephemeral",
-    "auto-delete",
+    "paste link",
+    "ephemeral notes",
+    "auto-delete paste",
     "kliboard",
-    "kliboard-v2",
   ],
   openGraph: {
-    title: "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes",
-    description:
-      "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.",
+    title: siteTitle,
+    description: siteDescription,
+    url: siteUrl,
     siteName: "Kliboard",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Kliboard — Temporary Text Clipboard",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes",
-    description:
-      "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.",
+    title: siteTitle,
+    description: siteDescription,
+    images: ["/opengraph-image.png"],
   },
   robots: {
     index: true,
