@@ -98,12 +98,12 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
                 +{overflow.length} more
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="top" sideOffset={6} className="w-max max-w-40">
+              <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-max max-w-64 p-1.5">
                 {overflow.map((url) => (
                   <DropdownMenuItem
                     key={url}
                     render={<a href={normalizeHref(url)} target="_blank" rel="noopener noreferrer" />}
-                    className="cursor-pointer"
+                    className="cursor-pointer gap-2.5 px-2.5 py-2"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{extractDomain(url)}</span>
@@ -132,12 +132,12 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
                 {urls.length} {urls.length === 1 ? "link" : "links"}
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="top" sideOffset={6} className="w-max max-w-40">
+              <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-max max-w-64 p-1.5">
                 {urls.map((url) => (
                   <DropdownMenuItem
                     key={url}
                     render={<a href={normalizeHref(url)} target="_blank" rel="noopener noreferrer" />}
-                    className="cursor-pointer"
+                    className="cursor-pointer gap-2.5 px-2.5 py-2"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{extractDomain(url)}</span>

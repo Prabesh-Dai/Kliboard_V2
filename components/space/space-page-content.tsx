@@ -831,6 +831,14 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                           </motion.span>
                         )}
                       </AnimatePresence>
+                      {content && contentIsMarkdown && !menuOpen && (
+                        <button
+                          onClick={() => setPreviewOpen(true)}
+                          className="cursor-pointer whitespace-nowrap rounded-md px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
+                        >
+                          Preview
+                        </button>
+                      )}
                       {space && (
                         <button
                           onClick={() => {
@@ -849,14 +857,6 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                       <div className="flex items-center">
                         {(content || space) && (
                           <div className={`flex items-center gap-3 overflow-hidden transition-all duration-200 ease-out ${menuOpen ? "max-w-48 mr-1 opacity-100" : "pointer-events-none max-w-0 opacity-0"}`}>
-                            {content && contentIsMarkdown && (
-                              <button
-                                onClick={() => { setPreviewOpen(true); setMenuOpen(false); }}
-                                className="mr-1 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-                              >
-                                Preview
-                              </button>
-                            )}
                             {content && (
                               <button
                                 onClick={() => { handleCopy(); setMenuOpen(false); }}
@@ -988,15 +988,20 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                               animate="visible"
                               exit="exit"
                               transition={{ duration: DURATION.fast, ease: EASE_OUT }}
-                              className="whitespace-nowrap text-xs font-medium uppercase tracking-widest"
+                              className="flex items-center gap-1.5 whitespace-nowrap text-xs font-medium uppercase tracking-widest"
                             >
-                              {isSaving
-                                ? activeUploadProgress.total > 0
-                                  ? `uploading ${activeUploadProgress.completed}/${activeUploadProgress.total}...`
-                                  : "saving..."
-                                : isNewSpace
-                                  ? <>{`Save`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>
-                                  : <>{`Update`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>}
+                              {isSaving ? (
+                                <>
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  {activeUploadProgress.total > 0
+                                    ? `uploading ${activeUploadProgress.completed}/${activeUploadProgress.total}...`
+                                    : "saving..."}
+                                </>
+                              ) : isNewSpace ? (
+                                <>{`Save`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>
+                              ) : (
+                                <>{`Update`}<span className="hidden sm:inline">&nbsp;Space</span>{` \u2192`}</>
+                              )}
                             </motion.span>
                           </AnimatePresence>
                         </button>
