@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const source = resolve(root, "design/logo-transparent.png");
-const outDir = resolve(root, "public");
+const publicDir = resolve(root, "public");
+const appDir = resolve(root, "app");
 
 const DARK_BG = "#0d0f0f";
 
@@ -41,17 +42,20 @@ async function maskable(size) {
     .toBuffer();
 }
 
-await mkdir(outDir, { recursive: true });
+await mkdir(publicDir, { recursive: true });
+await mkdir(appDir, { recursive: true });
 
 const tasks = [
-  { name: "icon-192.png", buf: await fitContain(192) },
-  { name: "icon-512.png", buf: await fitContain(512) },
-  { name: "icon-maskable-512.png", buf: await maskable(512) },
-  { name: "apple-touch-icon.png", buf: await fitContain(180, DARK_BG) },
+  { dir: publicDir, name: "icon-192.png", buf: await fitContain(192) },
+  { dir: publicDir, name: "icon-512.png", buf: await fitContain(512) },
+  { dir: publicDir, name: "icon-maskable-512.png", buf: await maskable(512) },
+  { dir: publicDir, name: "apple-touch-icon.png", buf: await fitContain(180, DARK_BG) },
+  { dir: appDir, name: "icon.png", buf: await fitContain(512) },
+  { dir: appDir, name: "apple-icon.png", buf: await fitContain(512) },
 ];
 
-for (const { name, buf } of tasks) {
-  const path = resolve(outDir, name);
+for (const { dir, name, buf } of tasks) {
+  const path = resolve(dir, name);
   await sharp(buf).toFile(path);
   console.log(`wrote ${path}`);
 }

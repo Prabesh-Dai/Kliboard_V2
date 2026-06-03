@@ -1,4 +1,4 @@
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `kliboard-static-${VERSION}`;
 const RUNTIME_CACHE = `kliboard-runtime-${VERSION}`;
 const OFFLINE_URL = "/offline";
