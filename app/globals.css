@@ -171,7 +171,7 @@
 
 
 [data-sonner-toaster] [data-sonner-toast] {
-  padding: 10px 20px !important;
+  padding: 10px 40px 10px 20px !important;
   border-radius: var(--radius-md) var(--radius-md) 0 var(--radius-md) !important;
   transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease-out, height 200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
@@ -234,6 +234,58 @@
 @keyframes toast-progress {
   from { transform: scaleX(1); }
   to { transform: scaleX(0); }
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button],
+[data-sonner-toaster][data-sonner-theme='dark'] [data-sonner-toast][data-styled='true'] [data-close-button] {
+  position: absolute !important;
+  top: 50% !important;
+  right: 10px !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+  width: 16px !important;
+  height: 16px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--muted-foreground) !important;
+  opacity: 1 !important;
+  transition: color 150ms ease-out !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button] > svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true']:hover [data-close-button]:hover,
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button]:hover {
+  color: var(--foreground) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-icon] {
+  width: 16px !important;
+  height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin-right: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-icon] > svg {
+  width: 16px !important;
+  height: 16px !important;
 }
 
 @layer base {

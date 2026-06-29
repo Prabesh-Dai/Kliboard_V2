@@ -98,7 +98,7 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
                 +{overflow.length} more
                 <ChevronDown className="size-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="top" sideOffset={6} className="w-max max-w-40">
+              <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-max max-w-64 p-1.5">
                 {overflow.map((url) => (
                   <DropdownMenuItem
                     key={url}
@@ -110,7 +110,7 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
                         aria-label={`Open ${extractDomain(url)} in a new tab`}
                       />
                     }
-                    className="cursor-pointer"
+                    className="cursor-pointer gap-2.5 px-2.5 py-2"
                   >
                     <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{extractDomain(url)}</span>
@@ -139,7 +139,7 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
                 {urls.length} {urls.length === 1 ? "link" : "links"}
                 <ChevronDown className="size-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="top" sideOffset={6} className="w-max max-w-40">
+              <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-max max-w-64 p-1.5">
                 {urls.map((url) => (
                   <DropdownMenuItem
                     key={url}
@@ -151,7 +151,7 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
                         aria-label={`Open ${extractDomain(url)} in a new tab`}
                       />
                     }
-                    className="cursor-pointer"
+                    className="cursor-pointer gap-2.5 px-2.5 py-2"
                   >
                     <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{extractDomain(url)}</span>
