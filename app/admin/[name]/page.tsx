@@ -58,12 +58,12 @@ export default function AdminSpacePage() {
             href="/admin"
             className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="size-3.5" />
             Admin
           </Link>
           <span className="text-muted-foreground/30">/</span>
           <div className="flex items-center gap-1.5">
-            <Shield className="h-3 w-3 text-primary" />
+            <Shield className="size-3 text-primary" />
             <span className="text-xs text-muted-foreground">Editing as admin</span>
           </div>
         </motion.div>

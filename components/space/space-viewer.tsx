@@ -65,12 +65,12 @@ export function SpaceViewer({ space }: SpaceViewerProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4" />
+          <Clock className="size-4" />
           Expires {timeRemaining}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleCopy}>
-            <Copy className="mr-2 h-4 w-4" />
+            <Copy className="mr-2 size-4" />
             Copy
           </Button>
           {!isEditing && (
@@ -111,7 +111,7 @@ export function SpaceViewer({ space }: SpaceViewerProps) {
                   onClick={handleSave}
                   disabled={!hasChanges || !content.trim() || updateSpace.isPending}
                 >
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="mr-2 size-4" />
                   {updateSpace.isPending ? "Saving..." : "Save"}
                 </Button>
                 <Button

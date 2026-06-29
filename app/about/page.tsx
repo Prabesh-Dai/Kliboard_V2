@@ -4,7 +4,44 @@ import { ExternalLink, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "About Kliboard and its creator.",
+  description:
+    "Kliboard is a free temporary online clipboard — paste text or files into a named space and share the link, no signup required. Learn what it is and how it works.",
+};
+
+const faqs = [
+  {
+    q: "What is Kliboard?",
+    a: "Kliboard is a free temporary online clipboard. You create a named space, paste text or files into it, and share the link — no account needed. Each space deletes itself automatically after the duration you choose.",
+  },
+  {
+    q: "What is an online clipboard?",
+    a: "An online clipboard lets you store text or files in your browser and reach them from any other device through a link. Kliboard is an online clipboard built for quick, throwaway sharing rather than permanent storage.",
+  },
+  {
+    q: "How do I share text between my phone and computer?",
+    a: "Open Kliboard on one device, paste your text into a new space, and reopen that space's link on the other device. Because each space lives at a simple URL, you can also type the space name straight into any browser to pull the content up.",
+  },
+  {
+    q: "Do I need an account to use Kliboard?",
+    a: "No. Creating spaces, pasting text, uploading files, and sharing links all work without signing up. An optional account just lets you keep track of the spaces you have made.",
+  },
+  {
+    q: "How long does a space last, and is it private?",
+    a: "You choose how long a space lives — from 5 minutes up to about 10 days — and it deletes itself when the time is up. You can also lock a space with a password so only people you share it with can open it.",
+  },
+];
+
+const faqStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.a,
+    },
+  })),
 };
 
 const projects = [
@@ -28,6 +65,10 @@ const projects = [
 export default function AboutPage() {
   return (
     <div className="mx-auto flex min-h-full max-w-3xl flex-col px-6 pt-24 pb-16 sm:pt-32">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+      />
       <header>
         <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
           about
@@ -46,6 +87,27 @@ export default function AboutPage() {
           irreplaceable here.
         </p>
       </header>
+
+      <section className="mt-16">
+        <h2 className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+          questions
+        </h2>
+        <dl className="mt-6 flex flex-col gap-2">
+          {faqs.map((faq) => (
+            <div
+              key={faq.q}
+              className="rounded-sm bg-surface-container-low px-5 py-4"
+            >
+              <dt className="font-heading text-base font-medium tracking-tight">
+                {faq.q}
+              </dt>
+              <dd className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                {faq.a}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <section className="mt-16">
         <h2 className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
@@ -68,7 +130,7 @@ export default function AboutPage() {
                     {project.description}
                   </p>
                 </div>
-                <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+                <ExternalLink className="mt-1 size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
               </a>
             </li>
           ))}
@@ -87,7 +149,7 @@ export default function AboutPage() {
             className="group inline-flex items-center gap-2 rounded-sm bg-surface-container-low px-4 py-2 text-sm transition-colors hover:bg-surface-container"
           >
             github
-            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
+            <ExternalLink className="size-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
           </a>
           <a
             href="https://www.linkedin.com/in/prabesh-sharma-767977232/"
@@ -96,7 +158,7 @@ export default function AboutPage() {
             className="group inline-flex items-center gap-2 rounded-sm bg-surface-container-low px-4 py-2 text-sm transition-colors hover:bg-surface-container"
           >
             linkedin
-            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
+            <ExternalLink className="size-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
           </a>
         </div>
       </section>
@@ -107,7 +169,7 @@ export default function AboutPage() {
           className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <span>visit my page</span>
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
         </Link>
       </section>
     </div>

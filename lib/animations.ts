@@ -39,13 +39,6 @@ export const errorVariants: Variants = {
   exit: { opacity: 0, y: -4 },
 };
 
-export const listStagger: Variants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.03, delayChildren: 0.02 },
-  },
-};
-
 export const scaleReveal: Variants = {
   hidden: { opacity: 0, scale: 0.97 },
   visible: { opacity: 1, scale: 1 },

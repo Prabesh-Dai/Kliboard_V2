@@ -77,7 +77,7 @@ export function SpaceEditor() {
             >
               {isPending ? (
                 <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <Loader2 className="size-3 animate-spin" />
                   entering…
                 </>
               ) : (
@@ -99,7 +99,7 @@ export function SpaceEditor() {
               transition={baseTransition}
               className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] text-destructive"
             >
-              <CircleAlert className="h-3 w-3 shrink-0" />
+              <CircleAlert className="size-3 shrink-0" />
               {nameError}
             </motion.p>
           )}

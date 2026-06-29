@@ -73,9 +73,12 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "Kliboard.V2",
+    title: "Kliboard",
     statusBarStyle: "black-translucent",
   },
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 export const viewport: Viewport = {

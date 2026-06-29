@@ -81,7 +81,8 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [scrubbing, setScrubbing] = useState(false);
-  const [peaks, setPeaks] = useState<number[] | null>(null);
+  const [decoded, setDecoded] = useState<{ src: string; peaks: number[] } | null>(null);
+  const peaks = decoded?.src === src ? decoded.peaks : null;
   const probingDurationRef = useRef(false);
 
   function applyProgress(pct: number) {
@@ -96,10 +97,9 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
   useEffect(() => {
     if (variant !== "hero") return;
     const controller = new AbortController();
-    setPeaks(null);
     decodePeaks(src, WAVEFORM_BARS, controller.signal)
       .then((p) => {
-        if (!controller.signal.aborted) setPeaks(p);
+        if (!controller.signal.aborted) setDecoded({ src, peaks: p });
       })
       .catch((err) => {
         if ((err as Error)?.name !== "AbortError") {
@@ -216,6 +216,7 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
       ref={audioRef}
       src={src}
       preload="auto"
+      aria-label="Audio attachment"
       onTimeUpdate={(e) => {
         if (!probingDurationRef.current) setCurrent(e.currentTarget.currentTime);
       }}
@@ -253,7 +254,7 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
         {peaks && (
           <>
             <div className="pointer-events-none absolute inset-x-3 top-1/2 h-3/5 -translate-y-1/2">
-              <Waveform peaks={peaks} className="h-full w-full fill-muted-foreground/30" />
+              <Waveform peaks={peaks} className="size-full fill-muted-foreground/30" />
             </div>
             <div
               ref={playedClipRef}
@@ -261,7 +262,7 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
               className="pointer-events-none absolute inset-x-3 top-1/2 h-3/5 -translate-y-1/2"
               style={{ clipPath: "inset(0 100% 0 0)" }}
             >
-              <Waveform peaks={peaks} className="h-full w-full fill-primary" />
+              <Waveform peaks={peaks} className="size-full fill-primary" />
             </div>
           </>
         )}
@@ -273,7 +274,7 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
             togglePlay();
           }}
           aria-label={playing ? "Pause" : "Play"}
-          className="relative z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105"
+          className="relative z-10 flex size-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
@@ -286,9 +287,9 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
               className="flex items-center justify-center"
             >
               {playing ? (
-                <Pause className="h-4 w-4 fill-current" />
+                <Pause className="size-4 fill-current" />
               ) : (
-                <Play className="h-4 w-4 translate-x-px fill-current" />
+                <Play className="size-4 translate-x-px fill-current" />
               )}
             </motion.span>
           </AnimatePresence>
@@ -314,7 +315,7 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
         type="button"
         onClick={togglePlay}
         aria-label={playing ? "Pause" : "Play"}
-        className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90"
+        className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90"
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
@@ -327,9 +328,9 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
             className="flex items-center justify-center"
           >
             {playing ? (
-              <Pause className="h-3 w-3 fill-current" />
+              <Pause className="size-3 fill-current" />
             ) : (
-              <Play className="h-3 w-3 translate-x-px fill-current" />
+              <Play className="size-3 translate-x-px fill-current" />
             )}
           </motion.span>
         </AnimatePresence>
@@ -352,7 +353,7 @@ export function AudioPlayer({ src, className, variant = "default", caption }: Au
         />
         <div
           ref={thumbRef}
-          className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary opacity-0 ring-2 ring-surface-container-high transition-opacity group-hover:opacity-100"
+          className="absolute top-1/2 size-3 -translate-y-1/2 rounded-full bg-primary opacity-0 ring-2 ring-surface-container-high transition-opacity group-hover:opacity-100"
           style={{ left: "calc(0% - 6px)" }}
         />
       </div>

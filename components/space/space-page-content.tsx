@@ -108,6 +108,12 @@ function hasMarkdown(text: string): boolean {
   return MD_PATTERNS.some((p) => p.test(text));
 }
 
+function describeFileFailures(failedErrors: Map<string, string>): string {
+  const reasons = Array.from(new Set(failedErrors.values()));
+  if (reasons.length === 1) return reasons[0].toLowerCase();
+  return "see the file list for details";
+}
+
 interface SpacePageContentProps {
   name: string;
   isAdmin?: boolean;
@@ -589,12 +595,6 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     });
   }
 
-  function describeFileFailures(failedErrors: Map<string, string>): string {
-    const reasons = Array.from(new Set(failedErrors.values()));
-    if (reasons.length === 1) return reasons[0].toLowerCase();
-    return "see the file list for details";
-  }
-
   const existingFileCount = remoteFiles?.length ?? 0;
   const totalFileCount = existingFileCount + pendingFiles.length;
   const fileSlotsFull = totalFileCount >= MAX_FILES_PER_SPACE;
@@ -663,7 +663,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
               <div className="mb-10 grid gap-5 md:grid-cols-[1fr_320px]">
                 <motion.div variants={fadeUp} transition={baseTransition} className="rounded-lg bg-surface-container-low p-6 ring-1 ring-ghost-border">
                   <div className="mb-4 flex items-center gap-2">
-                    <Skeleton className="h-3.5 w-3.5 rounded" />
+                    <Skeleton className="size-3.5 rounded" />
                     <Skeleton className="h-4 w-20" />
                   </div>
                   <div className="space-y-2.5">
@@ -728,6 +728,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                   {user && space ? (
                     canToggleLock ? (
                       <button
+                        type="button"
                         onClick={handleToggleLock}
                         disabled={toggleLock.isPending}
                         className="flex cursor-pointer items-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-50"
@@ -742,7 +743,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                             transition={{ duration: DURATION.fast, ease: EASE_OUT }}
                             className="inline-flex"
                           >
-                            {isLocked ? <Lock className="h-2.5 w-2.5" /> : <LockOpen className="h-2.5 w-2.5" />}
+                            {isLocked ? <Lock className="size-2.5" /> : <LockOpen className="size-2.5" />}
                           </motion.span>
                         </AnimatePresence>
                         &nbsp;
@@ -761,7 +762,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                       </button>
                     ) : (
                       <p className="flex items-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                        {isLocked ? <Lock className="h-2.5 w-2.5" /> : <LockOpen className="h-2.5 w-2.5" />}
+                        {isLocked ? <Lock className="size-2.5" /> : <LockOpen className="size-2.5" />}
                         &nbsp;
                         {isLocked ? "Locked" : "Unlocked"}<span className="hidden sm:inline">&nbsp;Space</span>
                       </p>
@@ -813,7 +814,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                 >
                   <div className="mb-1.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <NotebookPen className="h-3.5 w-3.5 text-muted-foreground" />
+                      <NotebookPen className="size-3.5 text-muted-foreground" />
                       <p className="font-heading text-sm font-medium"><span className="hidden sm:inline">Add </span>Note</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -833,6 +834,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                       </AnimatePresence>
                       {space && (
                         <button
+                          type="button"
                           onClick={() => {
                             navigator.clipboard.writeText(window.location.href);
                             toast.success("Link copied to clipboard");
@@ -840,10 +842,10 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                             clearTimeout(shareTimeout.current);
                             shareTimeout.current = setTimeout(() => setShareCopied(false), 2000);
                           }}
-                          className={`relative flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-surface-container-high hover:text-foreground ${menuOpen ? "pointer-events-none hidden" : ""}`}
+                          className={`relative flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-surface-container-high hover:text-foreground ${menuOpen ? "pointer-events-none hidden" : ""}`}
                         >
-                          <Link className={`h-3.5 w-3.5 transition-all duration-200 ${shareCopied ? "scale-0 opacity-0" : "scale-100 opacity-100"}`} />
-                          <Check className={`absolute h-3.5 w-3.5 text-primary transition-all duration-200 ${shareCopied ? "scale-100 opacity-100" : "scale-0 opacity-0"}`} />
+                          <Link className={`size-3.5 transition-all duration-200 ${shareCopied ? "scale-0 opacity-0" : "scale-100 opacity-100"}`} />
+                          <Check className={`absolute size-3.5 text-primary transition-all duration-200 ${shareCopied ? "scale-100 opacity-100" : "scale-0 opacity-0"}`} />
                         </button>
                       )}
                       <div className="flex items-center">
@@ -851,6 +853,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                           <div className={`flex items-center gap-3 overflow-hidden transition-all duration-200 ease-out ${menuOpen ? "max-w-48 mr-1 opacity-100" : "pointer-events-none max-w-0 opacity-0"}`}>
                             {content && contentIsMarkdown && (
                               <button
+                                type="button"
                                 onClick={() => { setPreviewOpen(true); setMenuOpen(false); }}
                                 className="mr-1 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
                               >
@@ -859,6 +862,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                             )}
                             {content && (
                               <button
+                                type="button"
                                 onClick={() => { handleCopy(); setMenuOpen(false); }}
                                 className="mr-1 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
                               >
@@ -867,22 +871,24 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                             )}
                             {space && (
                               <button
+                                type="button"
                                 onClick={() => { handleSync(); setMenuOpen(false); }}
                                 disabled={isSyncing}
                                 className="mr-1 flex cursor-pointer items-center gap-1 whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {isSyncing && <Loader2 className="h-3 w-3 animate-spin" />}
+                                {isSyncing && <Loader2 className="size-3 animate-spin" />}
                                 {isSyncing ? "Syncing…" : "Sync"}
                               </button>
                             )}
                           </div>
                         )}
                         <button
+                          type="button"
                           onClick={() => setMenuOpen((v) => !v)}
                           disabled={!content && !space}
-                          className={`flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground ${!content && !space ? "invisible" : ""}`}
+                          className={`flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground ${!content && !space ? "invisible" : ""}`}
                         >
-                          <EllipsisVertical className="h-3.5 w-3.5" />
+                          <EllipsisVertical className="size-3.5" />
                         </button>
                       </div>
                     </div>
@@ -898,7 +904,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                         transition={{ duration: DURATION.base, ease: EASE_OUT }}
                         className="flex-1 min-h-32 md:min-h-48 max-h-[35dvh] md:max-h-[60dvh] overflow-y-auto"
                       >
-                        <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                        <Suspense fallback={<Skeleton className="size-full" />}>
                           <MarkdownRenderer content={content} />
                         </Suspense>
                       </motion.div>
@@ -914,7 +920,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                       >
                         <Textarea
                           ref={textareaRef}
-                          className="min-h-32 md:min-h-48 max-h-[35dvh] md:max-h-[60dvh] resize-none border-0 bg-transparent px-0 py-0 font-heading text-base md:text-sm shadow-none field-sizing-content overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
+                          className="min-h-32 md:min-h-48 max-h-[35dvh] md:max-h-[60dvh] resize-none border-0 bg-transparent p-0 font-heading text-base md:text-sm shadow-none field-sizing-content overflow-y-auto break-all placeholder:text-muted-foreground focus-visible:ring-0"
                           placeholder="Start typing here..."
                           value={content}
                           onChange={(e) => canModify && setContent(e.target.value)}
@@ -926,7 +932,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                   <div className="relative flex items-end justify-end gap-2">
                     {(!user && isNewSpace) ? (
                       <p className="mr-auto flex items-center text-[10px] text-muted-foreground">
-                        <Info className="h-3 w-3 shrink-0" />&nbsp;
+                        <Info className="size-3 shrink-0" />&nbsp;
                         Space will not be editable<span className="hidden sm:inline">&nbsp;after saving</span>
                       </p>
                     ) : (
@@ -941,9 +947,10 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                           transition={{ duration: DURATION.base }}
                           className="pointer-events-auto absolute -inset-px z-10 flex items-center justify-center gap-1.5 rounded-sm bg-surface-container-low/90"
                         >
-                          <Lock className="h-3 w-3 text-muted-foreground" />
+                          <Lock className="size-3 text-muted-foreground" />
                           {canClaim ? (
                             <button
+                              type="button"
                               onClick={handleClaim}
                               disabled={isClaiming}
                               className="cursor-pointer text-[10px] font-medium text-primary underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
@@ -966,6 +973,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                       )}
                       {wouldDeleteOnSave ? (
                         <button
+                          type="button"
                           onClick={() => setConfirmEmptyDelete(true)}
                           disabled={isSaving || deleteSpace.isPending}
                           className="flex h-10 cursor-pointer items-center justify-center rounded-sm bg-destructive px-4 text-destructive-foreground shadow-md hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
@@ -976,6 +984,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                         </button>
                       ) : (
                         <button
+                          type="button"
                           onClick={handleSaveClick}
                           disabled={!canModify || !canSave || !hasChanges || isSaving}
                           className="flex h-10 cursor-pointer items-center justify-center rounded-sm bg-linear-to-br from-primary to-primary-container px-4 text-primary-foreground shadow-md hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1016,9 +1025,10 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                         transition={{ duration: DURATION.base }}
                         className="pointer-events-auto absolute -inset-px z-30 flex flex-row items-center justify-center gap-1.5 rounded-lg bg-surface-container-low/85 backdrop-blur-md p-4"
                       >
-                        <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Lock className="size-3.5 text-muted-foreground" />
                         {canClaim ? (
                           <button
+                            type="button"
                             onClick={handleClaim}
                             disabled={isClaiming}
                             className="cursor-pointer text-xs font-medium text-primary underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
@@ -1063,22 +1073,24 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Stored Items</p>
                   <div className="flex items-center rounded-md bg-surface-container-high p-0.5">
                     <button
+                      type="button"
                       onClick={() => setFileViewMode("grid")}
-                      className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-sm transition-all ${fileViewMode === "grid"
+                      className={`flex size-7 cursor-pointer items-center justify-center rounded-sm transition-all ${fileViewMode === "grid"
                         ? "bg-surface-container text-foreground"
                         : "text-muted-foreground hover:text-foreground"
                         }`}
                     >
-                      <LayoutGrid className="h-3.5 w-3.5" />
+                      <LayoutGrid className="size-3.5" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => setFileViewMode("list")}
-                      className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-sm transition-all ${fileViewMode === "list"
+                      className={`flex size-7 cursor-pointer items-center justify-center rounded-sm transition-all ${fileViewMode === "list"
                         ? "bg-surface-container text-foreground"
                         : "text-muted-foreground hover:text-foreground"
                         }`}
                     >
-                      <List className="h-3.5 w-3.5" />
+                      <List className="size-3.5" />
                     </button>
                   </div>
                 </div>
@@ -1105,23 +1117,25 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
             <DialogTitle>{space?.name ?? decodeURIComponent(name)}</DialogTitle>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={handleDownloadMd}
                 className="flex cursor-pointer items-center gap-1.5 rounded-md bg-surface-container px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-surface-container-low hover:text-foreground"
               >
-                <Download className="h-3 w-3" />
+                <Download className="size-3" />
                 .md
               </button>
               <button
+                type="button"
                 onClick={handleDownloadPdf}
                 className="flex cursor-pointer items-center gap-1.5 rounded-md bg-surface-container px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-surface-container-low hover:text-foreground"
               >
-                <Download className="h-3 w-3" />
+                <Download className="size-3" />
                 .pdf
               </button>
               <DialogClose
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container hover:text-foreground"
+                className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container hover:text-foreground"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </DialogClose>
             </div>
           </div>
@@ -1167,11 +1181,12 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteSpace.isPending}>Cancel</AlertDialogCancel>
             <button
+              type="button"
               onClick={handleDeleteEmptySpace}
               disabled={deleteSpace.isPending}
               className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
             >
-              {deleteSpace.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {deleteSpace.isPending && <Loader2 className="size-3.5 animate-spin" />}
               {deleteSpace.isPending ? "Deleting..." : "Delete space"}
             </button>
           </AlertDialogFooter>

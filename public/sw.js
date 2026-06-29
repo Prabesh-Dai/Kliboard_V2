@@ -24,9 +24,9 @@ self.addEventListener("activate", (event) => {
     (async () => {
       const keys = await caches.keys();
       await Promise.all(
-        keys
-          .filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
-          .map((k) => caches.delete(k))
+        keys.flatMap((k) =>
+          k !== STATIC_CACHE && k !== RUNTIME_CACHE ? [caches.delete(k)] : []
+        )
       );
       await self.clients.claim();
     })()

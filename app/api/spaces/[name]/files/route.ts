@@ -23,7 +23,7 @@ const fileMetadataSchema = z.object({
     .number()
     .positive()
     .max(MAX_FILE_SIZE_BYTES, "File too large (max 10MB)"),
-  space_id: z.string().uuid(),
+  space_id: z.uuid(),
 });
 
 export async function POST(
@@ -38,8 +38,7 @@ export async function POST(
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const { name } = await params;
-  const body = await request.json();
+  const [{ name }, body] = await Promise.all([params, request.json()]);
   const parsed = fileMetadataSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -129,8 +128,7 @@ export async function GET(
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const { name } = await params;
-  const supabase = await createClient();
+  const [{ name }, supabase] = await Promise.all([params, createClient()]);
 
   const { data: space } = await supabase
     .from("spaces")

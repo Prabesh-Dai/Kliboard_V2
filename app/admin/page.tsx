@@ -141,7 +141,7 @@ export default function AdminPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="mb-8 flex items-center gap-3">
-        <Shield className="h-6 w-6 text-primary" />
+        <Shield className="size-6 text-primary" />
         <h1 className="font-heading text-2xl font-medium tracking-tight">Admin</h1>
       </div>
 
@@ -155,6 +155,7 @@ export default function AdminPage() {
         ).map(({ key, label, icon: Icon }) => (
           <button
             key={key}
+            type="button"
             onClick={() => setTab(key)}
             className={`flex cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-sm transition-colors ${
               tab === key
@@ -162,7 +163,7 @@ export default function AdminPage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="size-4" />
             {label}
           </button>
         ))}
@@ -192,7 +193,7 @@ export default function AdminPage() {
                   className="rounded-lg bg-surface-container-low p-5"
                 >
                   <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                    <Icon className="h-4 w-4" />
+                    <Icon className="size-4" />
                     <span className="text-xs uppercase tracking-wider">{label}</span>
                   </div>
                   <p className="font-heading text-2xl font-medium">{value}</p>
@@ -226,9 +227,9 @@ export default function AdminPage() {
                 }}
               >
                 {purgeExpired.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 size-4" />
                 )}
                 {purgeExpired.isPending ? "Purging..." : "Purge expired"}
               </Button>
@@ -241,7 +242,7 @@ export default function AdminPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search spaces..."
                 value={searchInput}
@@ -256,7 +257,7 @@ export default function AdminPage() {
               disabled={spaces.isFetching}
             >
               {spaces.isFetching && !spaces.isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
               ) : null}
               Search
             </Button>
@@ -267,9 +268,9 @@ export default function AdminPage() {
                 onClick={() => setDeleteTarget(Array.from(selectedSpaces))}
               >
                 {deleteSpaces.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 size-4" />
                 )}
                 {deleteSpaces.isPending
                   ? `Deleting ${selectedSpaces.size}…`
@@ -307,7 +308,8 @@ export default function AdminPage() {
                         type="checkbox"
                         checked={selectedSpaces.has(space.id)}
                         onChange={() => toggleSpaceSelection(space.id)}
-                        className="h-4 w-4 shrink-0 rounded accent-primary"
+                        aria-label={`Select space ${space.name}`}
+                        className="size-4 shrink-0 rounded accent-primary"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -320,19 +322,19 @@ export default function AdminPage() {
                           <Badge variant="secondary">
                             {space.is_locked ? (
                               <>
-                                <Lock className="mr-1 h-3 w-3" />
+                                <Lock className="mr-1 size-3" />
                                 Locked
                               </>
                             ) : (
                               <>
-                                <LockOpen className="mr-1 h-3 w-3" />
+                                <LockOpen className="mr-1 size-3" />
                                 Open
                               </>
                             )}
                           </Badge>
                           {unlimited && (
                             <Badge variant="outline">
-                              <Infinity className="mr-1 h-3 w-3" />
+                              <Infinity className="mr-1 size-3" />
                               Unlimited
                             </Badge>
                           )}
@@ -353,15 +355,15 @@ export default function AdminPage() {
                       </div>
                       <div className="shrink-0">
                         <DropdownMenu>
-                          <DropdownMenuTrigger className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground">
-                            <MoreVertical className="h-4 w-4" />
+                          <DropdownMenuTrigger className="flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground">
+                            <MoreVertical className="size-4" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               className="cursor-pointer"
                               onClick={() => router.push(`/admin/${space.name}`)}
                             >
-                              <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                              <ExternalLink className="mr-2 size-3.5" />
                               Edit space
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -369,7 +371,7 @@ export default function AdminPage() {
                               className="cursor-pointer"
                               onClick={() => setDeleteTarget([space.id])}
                             >
-                              <Trash2 className="mr-2 h-3.5 w-3.5" />
+                              <Trash2 className="mr-2 size-3.5" />
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -387,12 +389,12 @@ export default function AdminPage() {
                     disabled={spacePage <= 1 || spaces.isFetching}
                     onClick={() => setSpacePage((p) => p - 1)}
                   >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    <ChevronLeft className="mr-1 size-4" />
                     Prev
                   </Button>
                   <span className="text-sm text-muted-foreground">
                     {spaces.isFetching && !spaces.isLoading ? (
-                      <Loader2 className="inline h-3 w-3 animate-spin" />
+                      <Loader2 className="inline size-3 animate-spin" />
                     ) : (
                       `${spacePage} / ${spaces.data.totalPages}`
                     )}
@@ -404,7 +406,7 @@ export default function AdminPage() {
                     onClick={() => setSpacePage((p) => p + 1)}
                   >
                     Next
-                    <ChevronRight className="ml-1 h-4 w-4" />
+                    <ChevronRight className="ml-1 size-4" />
                   </Button>
                 </div>
               )}
@@ -441,7 +443,7 @@ export default function AdminPage() {
                       </span>
                       {u.is_admin && (
                         <Badge className="border-0">
-                          <Shield className="mr-1 h-3 w-3" />
+                          <Shield className="mr-1 size-3" />
                           Admin
                         </Badge>
                       )}
@@ -490,7 +492,7 @@ export default function AdminPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteSpaces.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
               )}
               {deleteSpaces.isPending ? "Deleting…" : "Delete"}
             </AlertDialogAction>

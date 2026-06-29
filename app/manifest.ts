@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Kliboard.V2",
-    short_name: "Kliboard.V2",
+    name: "Kliboard",
+    short_name: "Kliboard",
     description:
       "Temporary text clipboard. Create, share, and auto-expire — no signup required.",
     start_url: "/",

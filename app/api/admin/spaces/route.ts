@@ -38,14 +38,16 @@ export async function GET(request: Request) {
   }
 
   const spaces = data ?? [];
-  const ownerIds = [...new Set(spaces.map((s) => s.owner_id).filter(Boolean))] as string[];
+  const ownerIds = new Set(
+    spaces.flatMap((s) => (s.owner_id ? [s.owner_id] : []))
+  );
   const emailMap = new Map<string, string>();
 
-  if (ownerIds.length) {
+  if (ownerIds.size) {
     const { data: usersData } = await admin.auth.admin.listUsers();
     if (usersData?.users) {
       for (const u of usersData.users) {
-        if (ownerIds.includes(u.id) && u.email) {
+        if (ownerIds.has(u.id) && u.email) {
           emailMap.set(u.id, u.email);
         }
       }

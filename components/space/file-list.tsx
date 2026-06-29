@@ -98,6 +98,15 @@ function fileUrl(file: Pick<FileRecord, "signed_url">): string {
   return file.signed_url ?? "";
 }
 
+function handleOpenRemote(file: FileRecord) {
+  const url = fileUrl(file);
+  if (!url) {
+    toast.error("File link unavailable");
+    return;
+  }
+  window.open(url, "_blank");
+}
+
 function getFileTypeIcon(mimeType: string) {
   if (isAudioFile(mimeType)) return Music;
   if (mimeType === "application/pdf") return FileText;
@@ -161,7 +170,7 @@ function FadeInImage({
 }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <div className="relative h-full w-full">
+    <div className="relative size-full">
       <AnimatePresence>
         {!loaded && (
           <motion.div
@@ -172,7 +181,7 @@ function FadeInImage({
             transition={{ duration: 0.2 }}
             className="absolute inset-0 z-1"
           >
-            <Skeleton className="h-full w-full rounded-none" />
+            <Skeleton className="size-full rounded-none" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -181,7 +190,7 @@ function FadeInImage({
         initial="hidden"
         animate={loaded ? "visible" : "hidden"}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="relative h-full w-full"
+        className="relative size-full"
       >
         <Image
           src={src}
@@ -234,12 +243,12 @@ function FileActionsMenu({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground">
-          <EllipsisVertical className="h-3.5 w-3.5" />
+        <DropdownMenuTrigger className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground">
+          <EllipsisVertical className="size-3.5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem className="cursor-pointer" onClick={() => onOpen(file)}>
-            <Eye className="mr-2 h-3.5 w-3.5" />
+            <Eye className="mr-2 size-3.5" />
             Open
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -248,23 +257,23 @@ function FileActionsMenu({
             onClick={() => onDownload(file)}
           >
             {isDownloading ? (
-              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 size-3.5 animate-spin" />
             ) : (
-              <Download className="mr-2 h-3.5 w-3.5" />
+              <Download className="mr-2 size-3.5" />
             )}
             {isDownloading ? "Downloading…" : "Download"}
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer" onClick={() => onShare(file)}>
             {isCopied ? (
-              <Check className="mr-2 h-3.5 w-3.5 text-primary" />
+              <Check className="mr-2 size-3.5 text-primary" />
             ) : (
-              <Share2 className="mr-2 h-3.5 w-3.5" />
+              <Share2 className="mr-2 size-3.5" />
             )}
             {isCopied ? "Link copied" : "Share"}
           </DropdownMenuItem>
           {canDelete && (
             <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
-              <Trash2 className="mr-2 h-3.5 w-3.5" />
+              <Trash2 className="mr-2 size-3.5" />
               Delete
             </DropdownMenuItem>
           )}
@@ -284,11 +293,12 @@ function FileActionsMenu({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <button
+              type="button"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
               className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
             >
-              {isDeleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {isDeleting && <Loader2 className="size-3.5 animate-spin" />}
               {isDeleting ? "Deleting..." : willEmptySpace ? "Delete space" : "Delete"}
             </button>
           </AlertDialogFooter>
@@ -301,6 +311,12 @@ function FileActionsMenu({
 type UnifiedItem =
   | { kind: "remote"; data: FileRecord }
   | { kind: "pending"; data: PendingFile };
+
+function itemKey(item: UnifiedItem): string {
+  return item.kind === "pending"
+    ? `file-${item.data.file.name}-${item.data.file.size}`
+    : `file-${item.data.filename}-${item.data.size_bytes}`;
+}
 
 export function FileList({
   spaceName,
@@ -352,12 +368,6 @@ export function FileList({
     }
     return list;
   }, [pendingFiles, remoteFiles]);
-
-  function itemKey(item: UnifiedItem): string {
-    return item.kind === "pending"
-      ? `file-${item.data.file.name}-${item.data.file.size}`
-      : `file-${item.data.filename}-${item.data.size_bytes}`;
-  }
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -411,14 +421,6 @@ export function FileList({
     }
   }
 
-  function handleOpenRemote(file: FileRecord) {
-    const url = fileUrl(file);
-    if (!url) {
-      toast.error("File link unavailable");
-      return;
-    }
-    window.open(url, "_blank");
-  }
 
   if (isLoading && !pendingFiles.length) {
     if (!spaceExists) return null;
@@ -496,17 +498,17 @@ export function FileList({
                       <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-lg">
                         {exiting ? (
                           <>
-                            <Check className="h-3.5 w-3.5 text-primary" />
+                            <Check className="size-3.5 text-primary" />
                             <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Done</p>
                           </>
                         ) : (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
                         )}
                       </div>
                     )}
                     <div className="flex items-center gap-4">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
-                        <Icon className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
+                        <Icon className="size-4 text-muted-foreground" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{file.name}</p>
@@ -516,10 +518,11 @@ export function FileList({
                       </div>
                       {!uploading && (
                         <button
+                          type="button"
                           onClick={() => onRemovePending(id)}
-                          className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
+                          className="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <X className="size-3.5" />
                         </button>
                       )}
                     </div>
@@ -547,15 +550,15 @@ export function FileList({
                 >
                   {isDeleting && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-lg">
-                      <Loader2 className="h-4 w-4 animate-spin text-destructive" />
+                      <Loader2 className="size-4 animate-spin text-destructive" />
                       <p className="text-[10px] font-medium uppercase tracking-wider text-destructive">
                         Deleting
                       </p>
                     </div>
                   )}
                   <div className="flex items-center gap-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
+                      <Icon className="size-4 text-muted-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{file.filename}</p>
@@ -611,12 +614,12 @@ export function FileList({
                         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
                           {exiting ? (
                             <>
-                              <Check className="h-5 w-5 text-primary" />
+                              <Check className="size-5 text-primary" />
                               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Done</p>
                             </>
                           ) : (
                             <>
-                              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                              <Loader2 className="size-5 animate-spin text-primary" />
                               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Uploading</p>
                             </>
                           )}
@@ -631,15 +634,16 @@ export function FileList({
                           />
                         ) : (
                           <div className="flex aspect-4/3 items-center justify-center">
-                            <Icon className="h-8 w-8 text-muted-foreground" />
+                            <Icon className="size-8 text-muted-foreground" />
                           </div>
                         )}
                         {!uploading && (
                           <button
+                            type="button"
                             onClick={() => onRemovePending(id)}
-                            className="absolute top-2 right-2 z-20 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-100 transition-opacity hover:bg-black/70 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
+                            className="absolute top-2 right-2 z-20 flex size-7 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-100 transition-opacity hover:bg-black/70 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="size-3" />
                           </button>
                         )}
                       </div>
@@ -668,12 +672,12 @@ export function FileList({
                       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
                         {exiting ? (
                           <>
-                            <Check className="h-5 w-5 text-primary" />
+                            <Check className="size-5 text-primary" />
                             <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Done</p>
                           </>
                         ) : (
                           <>
-                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                            <Loader2 className="size-5 animate-spin text-primary" />
                             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Uploading</p>
                           </>
                         )}
@@ -684,19 +688,20 @@ export function FileList({
                         <img
                           src={previewUrl}
                           alt={file.name}
-                          className="h-full w-full object-cover"
+                          className="size-full object-cover"
                         />
                       ) : (
                         <div className="flex h-full flex-col items-center justify-center gap-2 p-4">
-                          <Icon className="h-8 w-8 text-muted-foreground" />
+                          <Icon className="size-8 text-muted-foreground" />
                         </div>
                       )}
                       {!uploading && (
                         <button
+                          type="button"
                           onClick={() => onRemovePending(id)}
-                          className="absolute top-2 right-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-100 transition-opacity hover:bg-black/70 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
+                          className="absolute top-2 right-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-100 transition-opacity hover:bg-black/70 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="size-3" />
                         </button>
                       )}
                     </div>
@@ -732,7 +737,7 @@ export function FileList({
                   >
                     {isDeleting && (
                       <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
-                        <Loader2 className="h-5 w-5 animate-spin text-destructive" />
+                        <Loader2 className="size-5 animate-spin text-destructive" />
                         <p className="text-[10px] font-medium uppercase tracking-wider text-destructive">
                           Deleting
                         </p>
@@ -747,7 +752,7 @@ export function FileList({
                         />
                       ) : (
                         <div className="flex aspect-4/3 items-center justify-center">
-                          <Icon className="h-8 w-8 text-muted-foreground" />
+                          <Icon className="size-8 text-muted-foreground" />
                         </div>
                       )}
                     </div>
@@ -777,7 +782,7 @@ export function FileList({
                 >
                   {isDeleting ? (
                     <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface-container-low/80">
-                      <Loader2 className="h-5 w-5 animate-spin text-destructive" />
+                      <Loader2 className="size-5 animate-spin text-destructive" />
                       <p className="text-[10px] font-medium uppercase tracking-wider text-destructive">
                         Deleting
                       </p>
@@ -801,7 +806,7 @@ export function FileList({
                       />
                     ) : (
                       <div className="flex h-full flex-col items-center justify-center gap-3 p-4">
-                        <Icon className="h-10 w-10 text-muted-foreground" />
+                        <Icon className="size-10 text-muted-foreground" />
                         <p className="line-clamp-2 text-center text-[10px] text-muted-foreground">
                           {file.filename}
                         </p>

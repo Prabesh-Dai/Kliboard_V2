@@ -133,7 +133,7 @@ export function AnonClaimRunner() {
                     {space.content.trim() || "Empty space"}
                   </p>
                 </div>
-                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+                <ExternalLink className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
               </Link>
             </li>
           ))}

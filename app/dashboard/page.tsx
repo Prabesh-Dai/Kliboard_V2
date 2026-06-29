@@ -179,9 +179,9 @@ export default function DashboardPage() {
                         </Link>
                         <Badge variant="secondary">
                           {space.is_locked ? (
-                            <><Lock className="mr-1 h-3 w-3" />Locked</>
+                            <><Lock className="mr-1 size-3" />Locked</>
                           ) : (
-                            <><LockOpen className="mr-1 h-3 w-3" />Unlocked</>
+                            <><LockOpen className="mr-1 size-3" />Unlocked</>
                           )}
                         </Badge>
                         {expired && (
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                         {space.content}
                       </p>
                       <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="size-3" />
                         {expired
                           ? "Expired"
                           : `Expires ${formatDistanceToNow(new Date(space.expires_at), { addSuffix: true })}`}
@@ -200,7 +200,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="ml-4 flex shrink-0 gap-1">
                       <Button variant="ghost" size="icon" nativeButton={false} render={<Link href={`/space/${space.name}`} />}>
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink className="size-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -208,7 +208,7 @@ export default function DashboardPage() {
                         onClick={() => setDeleteTarget(space.name)}
                         disabled={deleteSpace.isPending}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="size-4 text-destructive" />
                       </Button>
                     </div>
                   </motion.div>
@@ -240,7 +240,7 @@ export default function DashboardPage() {
               disabled={deleteSpace.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteSpace.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {deleteSpace.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
               {deleteSpace.isPending ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -8,6 +8,8 @@ import { ALLOWED_MIME_TYPES, AUDIO_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib
 import { fileItemVariants, baseTransition } from "@/lib/animations";
 import type { PendingFile } from "@/components/space/file-list";
 
+const ALLOWED_MIME_TYPE_SET = new Set(ALLOWED_MIME_TYPES);
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -49,7 +51,7 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
 
       const accepted: File[] = [];
       for (const file of Array.from(fileList)) {
-        if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+        if (!ALLOWED_MIME_TYPE_SET.has(file.type)) {
           toast.error(`${file.name}: File type not allowed`);
           continue;
         }
@@ -108,7 +110,7 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
     >
       {dragging && pendingFiles.length > 0 && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-surface-container-low/90 backdrop-blur-[2px]">
-          <Upload className="h-5 w-5 text-primary/70" />
+          <Upload className="size-5 text-primary/70" />
           <p className="text-xs font-medium text-muted-foreground">Drop files here</p>
         </div>
       )}
@@ -162,20 +164,21 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       {hasError ? (
-                        <CircleAlert className="h-3.5 w-3.5 shrink-0 text-destructive" />
+                        <CircleAlert className="size-3.5 shrink-0 text-destructive" />
                       ) : exiting ? (
-                        <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        <Check className="size-3.5 shrink-0 text-primary" />
                       ) : (
-                        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
                       )}
                       <p className="min-w-0 flex-1 truncate text-xs">{file.name}</p>
                       <p className="shrink-0 text-[10px] text-muted-foreground">{formatFileSize(file.size)}</p>
                       {!exiting && onRemovePending && (
                         <button
+                          type="button"
                           onClick={() => onRemovePending(id)}
-                          className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
+                          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="size-3" />
                         </button>
                       )}
                     </div>
@@ -191,7 +194,7 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
       ) : full ? (
         <>
           <div className="flex items-center gap-2.5 md:hidden">
-            <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Upload className="size-4 shrink-0 text-muted-foreground" />
             <p className="text-sm font-medium text-muted-foreground">File limit reached</p>
           </div>
           <p className="hidden text-sm font-medium text-muted-foreground md:block">File limit reached</p>
@@ -201,8 +204,8 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
         <>
           <div className="flex items-center justify-between gap-3 md:hidden">
             <div className="flex min-w-0 items-center gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
-                <Upload className="h-4 w-4 text-primary/70" />
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-surface-container-high">
+                <Upload className="size-4 text-primary/70" />
               </div>
               <p className="truncate font-heading text-sm font-medium">Upload Files</p>
             </div>
@@ -211,13 +214,13 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
               onClick={() => inputRef.current?.click()}
               className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
             >
-              <FolderOpen className="h-3 w-3" />
+              <FolderOpen className="size-3" />
               Browse
             </button>
           </div>
           <Upload
             strokeWidth={4}
-            className="pointer-events-none absolute inset-0 m-auto hidden h-36 w-36 text-foreground opacity-[0.06] md:block"
+            className="pointer-events-none absolute inset-0 m-auto hidden size-36 text-foreground opacity-[0.06] md:block"
           />
           <div className="relative hidden flex-col items-center md:flex">
             <p className="font-heading text-sm font-medium">Upload Files</p>
@@ -228,7 +231,7 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
               onClick={() => inputRef.current?.click()}
               className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-surface-container-low px-5 py-2 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:text-foreground hover:ring-primary/30"
             >
-              <FolderOpen className="h-3 w-3" />
+              <FolderOpen className="size-3" />
               Browse Files
             </button>
           </div>
@@ -238,6 +241,7 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
         ref={inputRef}
         type="file"
         multiple
+        aria-label="Upload files"
         className="hidden"
         onChange={(e) => {
           handleFiles(e.target.files);

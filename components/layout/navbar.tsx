@@ -75,6 +75,7 @@ export function Navbar() {
             )}
             <span className="h-3.5 w-px bg-muted-foreground/25" />
             <button
+              type="button"
               onClick={() => setLogoutOpen(true)}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
@@ -101,10 +102,10 @@ export function Navbar() {
             <Tooltip>
               <TooltipTrigger
                 render={<Link href="/dashboard" />}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="My spaces"
               >
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid className="size-4" />
               </TooltipTrigger>
               <TooltipContent>my spaces</TooltipContent>
             </Tooltip>
@@ -112,10 +113,10 @@ export function Navbar() {
               <Tooltip>
                 <TooltipTrigger
                   render={<Link href="/admin" />}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                  className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
                   aria-label="Admin"
                 >
-                  <Shield className="h-4 w-4" />
+                  <Shield className="size-4" />
                 </TooltipTrigger>
                 <TooltipContent>admin</TooltipContent>
               </Tooltip>
@@ -124,10 +125,10 @@ export function Navbar() {
             <Tooltip>
               <TooltipTrigger
                 onClick={() => setLogoutOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+                className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Logout"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="size-4" />
               </TooltipTrigger>
               <TooltipContent>logout</TooltipContent>
             </Tooltip>

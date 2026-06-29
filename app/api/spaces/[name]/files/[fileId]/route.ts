@@ -7,8 +7,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ name: string; fileId: string }> }
 ) {
-  const { fileId } = await params;
-  const supabase = await createClient();
+  const [{ fileId }, supabase] = await Promise.all([params, createClient()]);
 
   const {
     data: { user },

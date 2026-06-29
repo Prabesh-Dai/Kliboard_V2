@@ -35,7 +35,6 @@ export const MAX_FILES_PER_SPACE = 5;
 export const MAX_CONTENT_LENGTH = 50000;
 export const SPACE_NAME_MIN = 3;
 export const SPACE_NAME_MAX = 24;
-export const POLLING_INTERVAL_MS = 5000;
 
 export const MAX_ANON_DURATION_MINUTES = 1440;
 export const GLOBAL_ANON_SPACE_CAP = 1000;

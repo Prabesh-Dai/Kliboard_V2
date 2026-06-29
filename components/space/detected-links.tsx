@@ -76,7 +76,7 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
             transition={baseTransition}
             className={`hidden sm:flex ${chipClass}`}
           >
-            <ExternalLink className="h-3 w-3 shrink-0" />
+            <ExternalLink className="size-3 shrink-0" />
             <span className="max-w-32 truncate">{extractDomain(url)}</span>
           </motion.a>
         ))}
@@ -96,16 +96,23 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
             <DropdownMenu>
               <DropdownMenuTrigger className={`cursor-pointer ${chipClass}`}>
                 +{overflow.length} more
-                <ChevronDown className="h-3 w-3" />
+                <ChevronDown className="size-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" side="top" sideOffset={6} className="w-max max-w-40">
                 {overflow.map((url) => (
                   <DropdownMenuItem
                     key={url}
-                    render={<a href={normalizeHref(url)} target="_blank" rel="noopener noreferrer" />}
+                    render={
+                      <a
+                        href={normalizeHref(url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Open ${extractDomain(url)} in a new tab`}
+                      />
+                    }
                     className="cursor-pointer"
                   >
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{extractDomain(url)}</span>
                   </DropdownMenuItem>
                 ))}
@@ -128,18 +135,25 @@ export function DetectedLinks({ content }: DetectedLinksProps) {
           >
             <DropdownMenu>
               <DropdownMenuTrigger className={`cursor-pointer ${chipClass}`}>
-                <ExternalLink className="h-3 w-3 shrink-0" />
+                <ExternalLink className="size-3 shrink-0" />
                 {urls.length} {urls.length === 1 ? "link" : "links"}
-                <ChevronDown className="h-3 w-3" />
+                <ChevronDown className="size-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" side="top" sideOffset={6} className="w-max max-w-40">
                 {urls.map((url) => (
                   <DropdownMenuItem
                     key={url}
-                    render={<a href={normalizeHref(url)} target="_blank" rel="noopener noreferrer" />}
+                    render={
+                      <a
+                        href={normalizeHref(url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Open ${extractDomain(url)} in a new tab`}
+                      />
+                    }
                     className="cursor-pointer"
                   >
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate">{extractDomain(url)}</span>
                   </DropdownMenuItem>
                 ))}

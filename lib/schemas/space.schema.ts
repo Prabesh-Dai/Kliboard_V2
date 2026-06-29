@@ -10,7 +10,7 @@ import {
   MAX_FILES_PER_SPACE,
 } from "@/lib/constants";
 
-export const spaceNameSchema = z
+const spaceNameSchema = z
   .string()
   .min(SPACE_NAME_MIN, "Name must be at least 3 characters")
   .max(SPACE_NAME_MAX, "Name must be at most 24 characters")

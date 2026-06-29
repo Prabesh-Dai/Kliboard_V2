@@ -47,7 +47,7 @@ function DialogSpaceRow({
   const { pending } = useLinkStatus();
   return (
     <div className="group relative flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-surface-container">
-      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+      <Icon className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-heading text-sm font-medium">
           {space.name}
@@ -59,9 +59,9 @@ function DialogSpaceRow({
       <div className="flex shrink-0 items-center gap-2">
         {showLock && (
           space.is_locked ? (
-            <Lock className="h-3 w-3 text-muted-foreground/40" />
+            <Lock className="size-3 text-muted-foreground/40" />
           ) : (
-            <LockOpen className="h-3 w-3 text-muted-foreground/40" />
+            <LockOpen className="size-3 text-muted-foreground/40" />
           )
         )}
         <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/40">
@@ -70,7 +70,7 @@ function DialogSpaceRow({
       </div>
       {pending && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-surface-container-high/70 backdrop-blur-[1px]">
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <Loader2 className="size-4 animate-spin text-primary" />
         </div>
       )}
     </div>
@@ -90,7 +90,7 @@ function SpaceCard({
     <div className="group relative flex flex-col gap-2 rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+          <Icon className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
           <p className="truncate font-heading text-sm font-medium">
             {space.name}
           </p>
@@ -98,9 +98,9 @@ function SpaceCard({
         <div className="flex shrink-0 items-center gap-2">
           {showLock && (
             space.is_locked ? (
-              <Lock className="h-3 w-3 text-muted-foreground/40" />
+              <Lock className="size-3 text-muted-foreground/40" />
             ) : (
-              <LockOpen className="h-3 w-3 text-muted-foreground/40" />
+              <LockOpen className="size-3 text-muted-foreground/40" />
             )
           )}
           <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground/40">
@@ -113,7 +113,7 @@ function SpaceCard({
       </p>
       {pending && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-surface-container-high/70 backdrop-blur-[1px]">
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <Loader2 className="size-4 animate-spin text-primary" />
         </div>
       )}
     </div>
@@ -165,6 +165,7 @@ export function RecentSpacesGrid() {
       {hasMore && (
         <div className="mt-3 flex justify-center">
           <button
+            type="button"
             onClick={() => setOpen(true)}
             className="text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
           >
@@ -181,7 +182,7 @@ export function RecentSpacesGrid() {
           <div className="-mx-5 min-h-0 flex-1 overflow-y-auto px-5">
             {allLoading && !allSpaces ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <div className="flex flex-col gap-2">

@@ -20,8 +20,7 @@ export async function GET(
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const { name } = await params;
-  const supabase = await createClient();
+  const [{ name }, supabase] = await Promise.all([params, createClient()]);
 
   const {
     data: { user },
@@ -77,8 +76,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const { name } = await params;
-  const body = await request.json();
+  const [{ name }, body] = await Promise.all([params, request.json()]);
   const parsed = updateSpaceSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -166,8 +164,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
-  const { name } = await params;
-  const supabase = await createClient();
+  const [{ name }, supabase] = await Promise.all([params, createClient()]);
 
   const {
     data: { user },

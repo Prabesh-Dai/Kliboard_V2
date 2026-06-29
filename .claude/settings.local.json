@@ -11,7 +11,10 @@
       "Bash(curl -s http://localhost:3000/sitemap.xml)",
       "Bash(npm ls:*)",
       "Bash(grep:*)",
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(curl -sL --max-time 15 \"https://www.kliboard.online/\")",
+      "Bash(curl -sL --max-time 15 \"https://www.kliboard.online/sitemap.xml\")",
+      "Bash(npm install *)"
     ]
   }
 }

@@ -9,8 +9,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
-  const { name } = await params;
-  const supabase = await createClient();
+  const [{ name }, supabase] = await Promise.all([params, createClient()]);
 
   const {
     data: { user },

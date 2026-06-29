@@ -229,11 +229,11 @@ export function AudioRecorder({ onRecorded, disabled, compact, fullWidth }: Audi
           transition={fadeTransition}
           className={
             compact
-              ? "flex h-8 w-8 shrink-0 cursor-not-allowed items-center justify-center rounded-md bg-surface-container-low text-muted-foreground/60 ring-1 ring-ghost-border opacity-50"
+              ? "flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-md bg-surface-container-low text-muted-foreground/60 ring-1 ring-ghost-border opacity-50"
               : `flex ${fullWidth ? "w-full justify-center" : "shrink-0"} cursor-not-allowed items-center gap-1.5 rounded-md bg-surface-container-low px-5 py-3 text-[10px] uppercase tracking-widest text-muted-foreground/60 ring-1 ring-ghost-border opacity-50`
           }
         >
-          <Mic className={compact ? "h-3.5 w-3.5" : "h-3 w-3"} />
+          <Mic className={compact ? "size-3.5" : "size-3"} />
           {!compact && <span>Unavailable</span>}
         </motion.button>
       ) : recording ? (
@@ -250,14 +250,14 @@ export function AudioRecorder({ onRecorded, disabled, compact, fullWidth }: Audi
               layoutId={micLayoutId}
               transition={layoutTransition}
               aria-hidden
-              className="flex h-3 w-3 items-center justify-center text-destructive"
+              className="flex size-3 items-center justify-center text-destructive"
             >
               <motion.span
                 className="flex"
                 animate={reduceMotion ? undefined : { opacity: [1, 0.35, 1] }}
                 transition={reduceMotion ? undefined : { duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Mic className="h-3 w-3" />
+                <Mic className="size-3" />
               </motion.span>
             </motion.span>
             <motion.span
@@ -281,17 +281,17 @@ export function AudioRecorder({ onRecorded, disabled, compact, fullWidth }: Audi
               type="button"
               onClick={() => stop(false)}
               aria-label="Stop recording"
-              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-destructive transition-colors hover:bg-destructive/20"
+              className="flex size-6 cursor-pointer items-center justify-center rounded text-destructive transition-colors hover:bg-destructive/20"
             >
-              <Square className="h-3 w-3 fill-current" />
+              <Square className="size-3 fill-current" />
             </button>
             <button
               type="button"
               onClick={() => stop(true)}
               aria-label="Cancel recording"
-              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
+              className="flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-container-high hover:text-foreground"
             >
-              <X className="h-3 w-3" />
+              <X className="size-3" />
             </button>
           </motion.div>
         </motion.div>
@@ -308,7 +308,7 @@ export function AudioRecorder({ onRecorded, disabled, compact, fullWidth }: Audi
           transition={fadeTransition}
           className={
             compact
-              ? "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md bg-surface-container-low text-muted-foreground ring-1 ring-ghost-border transition-colors hover:bg-surface-container-high hover:text-foreground hover:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+              ? "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md bg-surface-container-low text-muted-foreground ring-1 ring-ghost-border transition-colors hover:bg-surface-container-high hover:text-foreground hover:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
               : `flex ${fullWidth ? "w-full justify-center" : "shrink-0"} cursor-pointer items-center gap-1.5 rounded-md bg-surface-container-low px-5 py-3 text-[10px] uppercase tracking-widest text-muted-foreground ring-1 ring-ghost-border transition-colors hover:bg-surface-container-high hover:text-foreground hover:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50`
           }
         >
@@ -317,7 +317,7 @@ export function AudioRecorder({ onRecorded, disabled, compact, fullWidth }: Audi
             transition={layoutTransition}
             className="flex items-center justify-center"
           >
-            <Mic className={compact ? "h-3.5 w-3.5" : "h-3 w-3"} />
+            <Mic className={compact ? "size-3.5" : "size-3"} />
           </motion.span>
           {!compact && (
             <motion.span

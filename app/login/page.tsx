@@ -53,7 +53,7 @@ export default function LoginPage() {
             variant="outline"
             className="h-12 w-full text-base"
           >
-            <GoogleIcon className="mr-2 h-5 w-5" />
+            <GoogleIcon className="mr-2 size-5" />
             {loading ? "Redirecting..." : "Continue with Google"}
           </Button>
         </CardContent>

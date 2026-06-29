@@ -38,7 +38,7 @@ export function SpacePasswordDialog({
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
+            <Lock className="size-5" />
             Password Required
           </DialogTitle>
           <DialogDescription>
