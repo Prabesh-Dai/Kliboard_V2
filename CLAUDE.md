@@ -18,7 +18,7 @@ Temporary text clipboard web app. Users create named "spaces," paste text, share
 - **Rate limiting:** Upstash Redis + @upstash/ratelimit
 - **Date handling:** date-fns 3.x+
 - **Icons:** Lucide React
-- **Animation:** Motion (`motion/react`) — for state transitions and entry/exit. Variants in `lib/animations.ts`
+- **Animation:** Motion (`motion/react`) — for state transitions, exit, and interaction. Above-the-fold entry animations use CSS (see animation rules). Variants in `lib/animations.ts`
 - **Deployment:** Vercel (free tier)
 
 ## Project Structure
@@ -84,7 +84,7 @@ Treat this file as living documentation. When the user shares a notable rule, co
 - **Duration values in minutes:** 5, 60, 600, 1440, 14400
 - **Supabase publishable key** (not legacy anon key): `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - **Animation rules:**
-  - Use `motion/react` (`AnimatePresence` + `motion.*`) for state changes, entry/exit, list reorder. CSS transitions only for hover/focus.
+  - Use `motion/react` (`AnimatePresence` + `motion.*`) for state changes, exit animations, list reorder, layout morphs, and gestures. Use CSS for hover/focus and for one-shot entry/mount animations on above-the-fold (LCP) content — never gate the first paint on JS. Motion's `initial="hidden"` SSRs `opacity:0`, which delays LCP until hydration; a CSS entry animation plays at first paint instead. Reuse `.animate-enter` (+ `animate-enter-1/2/3` stagger) from `globals.css`.
   - Shared variants and timing live in `lib/animations.ts` — import them, don't redefine. Default duration 150–250ms, ease `[0.22, 1, 0.36, 1]`
   - Always wrap dynamic lists in `<AnimatePresence>` so removals animate
   - `layout` prop only for genuine position morphs (e.g. file pending↔stored, list reorder). Avoid blanket use — perf cost

@@ -15,9 +15,10 @@ const spaceGrotesk = Space_Grotesk({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  preload: false,
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kliboard.online";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.kliboard.online";
 const siteTitle = "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes";
 const siteDescription =
   "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.";
