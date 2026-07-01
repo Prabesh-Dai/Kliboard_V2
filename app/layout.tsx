@@ -11,6 +11,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-heading",
+  display: "optional",
 });
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
