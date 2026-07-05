@@ -3,12 +3,36 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
-import { Upload, X, FileText, FileSpreadsheet, FileIcon, Check, FolderOpen, CircleAlert, Music } from "lucide-react";
+import { Upload, X, FileText, FileSpreadsheet, FileIcon, Check, FolderOpen, CircleAlert, Music, Maximize2, Loader2 } from "lucide-react";
 import { ALLOWED_MIME_TYPES, AUDIO_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
 import { fileItemVariants, baseTransition } from "@/lib/animations";
+import { AudioPlayer } from "@/components/space/audio-player";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { PendingFile } from "@/components/space/file-list";
 
 const ALLOWED_MIME_TYPE_SET = new Set(ALLOWED_MIME_TYPES);
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const TEXT_TYPES = ["text/plain", "text/markdown", "text/csv", "application/json"];
+
+function isImageFile(mimeType: string) {
+  return IMAGE_TYPES.includes(mimeType);
+}
+
+function isAudioFile(mimeType: string) {
+  return AUDIO_MIME_TYPES.includes(mimeType) || mimeType.startsWith("audio/");
+}
+
+function isPdfFile(mimeType: string) {
+  return mimeType === "application/pdf";
+}
+
+function isTextFile(mimeType: string) {
+  return TEXT_TYPES.includes(mimeType);
+}
+
+function isPopupPreviewable(mimeType: string) {
+  return isImageFile(mimeType) || isPdfFile(mimeType) || isTextFile(mimeType);
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -43,7 +67,49 @@ interface FileUploadProps {
 export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRemovePending, uploading, full, progress, disabled }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [previewFile, setPreviewFile] = useState<PendingFile | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [textContent, setTextContent] = useState<{ status: "loading" | "ready" | "error"; value: string } | null>(null);
+  const [mediaStatus, setMediaStatus] = useState<"loading" | "ready" | "error">("loading");
+  const textReqRef = useRef(0);
   const reduceMotion = useReducedMotion();
+
+  const activePreview =
+    previewFile && pendingFiles.some((p) => p.id === previewFile.id) ? previewFile : null;
+
+  useEffect(() => {
+    if (!pdfUrl) return;
+    return () => URL.revokeObjectURL(pdfUrl);
+  }, [pdfUrl]);
+
+  function openPreview(pending: PendingFile) {
+    const { file } = pending;
+    setPreviewFile(pending);
+    setMediaStatus("loading");
+    setPdfUrl(isPdfFile(file.type) ? URL.createObjectURL(file) : null);
+    if (isTextFile(file.type)) {
+      const req = ++textReqRef.current;
+      setTextContent({ status: "loading", value: "" });
+      file
+        .text()
+        .then((value) => {
+          if (textReqRef.current === req) setTextContent({ status: "ready", value });
+        })
+        .catch((err) => {
+          console.error("Failed to read text file for preview", err);
+          if (textReqRef.current === req) setTextContent({ status: "error", value: "" });
+        });
+    } else {
+      setTextContent(null);
+    }
+  }
+
+  function closePreview() {
+    textReqRef.current++;
+    setPreviewFile(null);
+    setPdfUrl(null);
+    setTextContent(null);
+  }
 
   const handleFiles = useCallback(
     (fileList: FileList | null) => {
@@ -142,53 +208,113 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
               />
             </div>
           )}
-          <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
-            <AnimatePresence initial={false} mode="popLayout">
-              {(uploading ? [] : pendingFiles).map(({ id, file, exiting, error }) => {
-                const Icon = getFileTypeIcon(file.type);
-                const hasError = Boolean(error);
-                return (
-                  <motion.div
-                    key={id}
-                    layout={reduceMotion ? false : "position"}
-                    variants={fileItemVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    transition={baseTransition}
-                    className={`flex min-w-0 flex-col gap-1 rounded-md px-3 py-2 ${
-                      hasError
-                        ? "bg-destructive/10 ring-1 ring-destructive/30"
-                        : "bg-surface-container-high/50"
-                    }`}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {hasError ? (
-                        <CircleAlert className="size-3.5 shrink-0 text-destructive" />
-                      ) : exiting ? (
-                        <Check className="size-3.5 shrink-0 text-primary" />
-                      ) : (
-                        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+          <div className="min-h-0 max-h-[70dvh] flex-1 overflow-y-auto">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <AnimatePresence initial={false} mode="popLayout">
+                {(uploading ? [] : pendingFiles).map((pending) => {
+                  const { id, file, previewUrl, exiting, error } = pending;
+                  const Icon = getFileTypeIcon(file.type);
+                  const hasError = Boolean(error);
+                  const isImage = isImageFile(file.type) && Boolean(previewUrl);
+                  const isAudio = isAudioFile(file.type) && Boolean(previewUrl);
+                  const canPreview =
+                    !hasError && !exiting && (isImage || isPdfFile(file.type) || isTextFile(file.type));
+                  return (
+                    <motion.div
+                      key={id}
+                      layout={reduceMotion ? false : "position"}
+                      variants={fileItemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      transition={baseTransition}
+                      className="group flex min-w-0 flex-col gap-1.5"
+                    >
+                      <div
+                        role={canPreview ? "button" : undefined}
+                        tabIndex={canPreview ? 0 : undefined}
+                        aria-label={canPreview ? `Preview ${file.name}` : undefined}
+                        onClick={canPreview ? () => openPreview(pending) : undefined}
+                        onKeyDown={
+                          canPreview
+                            ? (e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  openPreview(pending);
+                                }
+                              }
+                            : undefined
+                        }
+                        className={`relative overflow-hidden rounded-md outline-none ${
+                          canPreview ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/60" : ""
+                        } ${isAudio ? "" : "aspect-4/3"} ${
+                          hasError
+                            ? "bg-destructive/10 ring-1 ring-destructive/40"
+                            : "bg-surface-container-high/50"
+                        }`}
+                      >
+                        {isAudio ? (
+                          <AudioPlayer src={previewUrl} variant="hero" caption={formatFileSize(file.size)} />
+                        ) : isImage ? (
+                          <img src={previewUrl} alt={file.name} className="size-full object-cover" />
+                        ) : (
+                          <div className="flex size-full flex-col items-center justify-center gap-2 p-3 text-center">
+                            <Icon className="size-7 text-muted-foreground" />
+                            <span className="font-mono text-[9px] text-muted-foreground">{formatFileSize(file.size)}</span>
+                          </div>
+                        )}
+
+                        {isImage && (
+                          <span className="absolute bottom-1.5 left-1.5 rounded bg-surface-container-low/80 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground backdrop-blur-sm">
+                            {formatFileSize(file.size)}
+                          </span>
+                        )}
+
+                        {canPreview && (
+                          <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                            <span className="flex size-9 items-center justify-center rounded-full bg-surface-container-low/80 text-foreground shadow-sm backdrop-blur-sm">
+                              <Maximize2 className="size-4" />
+                            </span>
+                          </div>
+                        )}
+
+                        {hasError && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-surface-container-low/40">
+                            <CircleAlert className="size-6 text-destructive" />
+                          </div>
+                        )}
+                        {exiting && !hasError && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-primary/10">
+                            <Check className="size-6 text-primary" />
+                          </div>
+                        )}
+
+                        {!exiting && onRemovePending && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemovePending(id);
+                            }}
+                            aria-label={`Remove ${file.name}`}
+                            className="absolute right-1.5 top-1.5 z-20 flex size-6 cursor-pointer items-center justify-center rounded bg-surface-container-low/80 text-muted-foreground backdrop-blur-sm transition-colors hover:text-foreground"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="truncate px-0.5 text-[10px] text-muted-foreground" title={file.name}>
+                        {file.name}
+                      </p>
+                      {hasError && (
+                        <p className="px-0.5 text-[10px] leading-snug text-destructive">{error}</p>
                       )}
-                      <p className="min-w-0 flex-1 truncate text-xs">{file.name}</p>
-                      <p className="shrink-0 text-[10px] text-muted-foreground">{formatFileSize(file.size)}</p>
-                      {!exiting && onRemovePending && (
-                        <button
-                          type="button"
-                          onClick={() => onRemovePending(id)}
-                          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      )}
-                    </div>
-                    {hasError && (
-                      <p className="pl-6.5 text-[10px] leading-snug text-destructive">{error}</p>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       ) : full ? (
@@ -248,6 +374,73 @@ export function FileUpload({ onFilesSelected, maxFiles, pendingFiles = [], onRem
           if (inputRef.current) inputRef.current.value = "";
         }}
       />
+
+      <Dialog open={Boolean(activePreview)} onOpenChange={(open) => { if (!open) closePreview(); }}>
+        <DialogContent className="flex max-h-[85dvh] flex-col gap-3 sm:max-w-3xl">
+          {activePreview && (
+            <>
+              <DialogTitle className="truncate pr-8 text-sm">{activePreview.file.name}</DialogTitle>
+              <div className="min-h-0 flex-1 overflow-auto">
+                {isImageFile(activePreview.file.type) && activePreview.previewUrl ? (
+                  <div className="relative flex min-h-[40dvh] items-center justify-center">
+                    {mediaStatus === "loading" && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center">
+                        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                    {mediaStatus === "error" ? (
+                      <p className="py-10 text-center text-xs text-destructive">Could not load this image.</p>
+                    ) : (
+                      <img
+                        src={activePreview.previewUrl}
+                        alt={activePreview.file.name}
+                        onLoad={() => setMediaStatus("ready")}
+                        onError={() => setMediaStatus("error")}
+                        className={`mx-auto max-h-[72dvh] w-auto rounded-md object-contain ${
+                          reduceMotion ? "" : "transition-opacity duration-200"
+                        } ${mediaStatus === "ready" ? "opacity-100" : "opacity-0"}`}
+                      />
+                    )}
+                  </div>
+                ) : isPdfFile(activePreview.file.type) ? (
+                  <div className="relative">
+                    {mediaStatus === "loading" && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center">
+                        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                    {pdfUrl && (
+                      <iframe
+                        src={pdfUrl}
+                        title={activePreview.file.name}
+                        onLoad={() => setMediaStatus("ready")}
+                        className="h-[72dvh] w-full rounded-md bg-surface-container"
+                      />
+                    )}
+                  </div>
+                ) : isTextFile(activePreview.file.type) ? (
+                  textContent?.status === "ready" ? (
+                    <pre className="max-h-[72dvh] overflow-auto rounded-md bg-surface-container p-4 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-foreground">
+                      {textContent.value}
+                    </pre>
+                  ) : textContent?.status === "error" ? (
+                    <p className="py-10 text-center text-xs text-destructive">Could not read this file.</p>
+                  ) : (
+                    <div className="flex h-[40dvh] items-center justify-center">
+                      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )
+                ) : (
+                  <p className="py-10 text-center text-xs text-muted-foreground">No preview available.</p>
+                )}
+              </div>
+              <p className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                {formatFileSize(activePreview.file.size)}
+              </p>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
