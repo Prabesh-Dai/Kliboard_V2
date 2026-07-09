@@ -61,9 +61,9 @@ const projects = [
     href: "https://calculab.pareki.xyz/",
   },
   {
-    name: "Overwatch rank tracker",
-    description: "Track your Overwatch competitive rank over time.",
-    href: "https://overwatch-rank-tracker.vercel.app/",
+    name: "STACKD",
+    description: "Track your Overwatch competitive rank over time",
+    href: "https://stackd.kliboard.online/",
   },
 ];
 
