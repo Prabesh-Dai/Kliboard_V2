@@ -60,6 +60,11 @@ const projects = [
     description: "A calculator with a few more tricks than the default.",
     href: "https://calculab.pareki.xyz/",
   },
+  {
+    name: "Overwatch rank tracker",
+    description: "Track your Overwatch competitive rank over time.",
+    href: "https://overwatch-rank-tracker.vercel.app/",
+  },
 ];
 
 export default function AboutPage() {
