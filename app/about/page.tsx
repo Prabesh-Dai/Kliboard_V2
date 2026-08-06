@@ -60,6 +60,11 @@ const projects = [
     description: "A calculator with a few more tricks than the default.",
     href: "https://calculab.pareki.xyz/",
   },
+  {
+    name: "STACKD",
+    description: "Track your Overwatch competitive rank over time",
+    href: "https://stackd.kliboard.online/",
+  },
 ];
 
 export default function AboutPage() {
