@@ -33,7 +33,16 @@ function useCountdown(expiresAt?: string) {
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSpace, useCreateSpace, useUpdateSpace, useToggleLock, useDeleteSpace } from "@/hooks/use-space";
+import {
+  useSpace,
+  useCreateSpace,
+  useUpdateSpace,
+  useToggleLock,
+  useDeleteSpace,
+  useUnlockSpace,
+  useSetSpaceVisibility,
+  type SpaceError,
+} from "@/hooks/use-space";
 import { getClaimForSpace, removeAnonClaim } from "@/lib/anon-claims";
 import { useBatchFileUpload, uploadFilesToStorage } from "@/hooks/use-file-upload";
 import { friendlyUploadError } from "@/lib/upload-errors";
@@ -63,6 +72,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DeletionCountdown } from "@/components/space/deletion-countdown";
 import { DetectedLinks } from "@/components/space/detected-links";
+import { SpaceAccessMenu } from "@/components/space/space-access-menu";
+import { SetPasswordDialog } from "@/components/space/set-password-dialog";
+import { SpacePasswordDialog } from "@/components/space/space-password-dialog";
 import { MAX_FILES_PER_SPACE } from "@/lib/constants";
 import {
   fadeUp,
@@ -70,7 +82,6 @@ import {
   staggerContainer,
   screenFade,
   switchVariants,
-  iconSwap,
   baseTransition,
   EASE_OUT,
   DURATION,
@@ -81,7 +92,6 @@ import {
   List,
   EllipsisVertical,
   Lock,
-  LockOpen,
   Info,
   NotebookPen,
   Download,
@@ -89,6 +99,7 @@ import {
   Check,
   X,
   Loader2,
+  KeyRound,
 } from "lucide-react";
 
 const MD_PATTERNS = [
@@ -125,13 +136,12 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
   const isAnon = !authLoading && !user;
   const spaceQuery = useSpace(name);
   const { isLoading, error, refetch } = spaceQuery;
-  const is404 = Boolean(
-    error &&
-      (error as Error & { status?: number }).status === 404 &&
-      spaceQuery.dataUpdatedAt < spaceQuery.errorUpdatedAt
-  );
+  const spaceError = error as SpaceError | null;
+  const isStaleError = spaceQuery.dataUpdatedAt < spaceQuery.errorUpdatedAt;
+  const is404 = Boolean(spaceError?.status === 404 && isStaleError);
+  const requiresPassword = Boolean(spaceError?.requiresPassword && isStaleError);
   const isNewSpace = is404;
-  const space = is404 ? undefined : spaceQuery.data;
+  const space = is404 || requiresPassword ? undefined : spaceQuery.data;
 
   const [content, setContent] = useState("");
   const [duration, setDuration] = useState(5);
@@ -154,6 +164,11 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
   const shareTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [confirmEmptyDelete, setConfirmEmptyDelete] = useState(false);
   const [markdownChunkReady, setMarkdownChunkReady] = useState(false);
+  const [pendingPrivate, setPendingPrivate] = useState(false);
+  const [pendingPassword, setPendingPassword] = useState<string | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordDialogMode, setPasswordDialogMode] = useState<"set" | "rotate">("set");
+  const [unlockError, setUnlockError] = useState<string>();
 
   useEffect(() => {
     let cancelled = false;
@@ -192,6 +207,8 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
   const updateSpace = useUpdateSpace(name);
   const toggleLock = useToggleLock(name);
   const deleteSpace = useDeleteSpace();
+  const unlockSpace = useUnlockSpace(name);
+  const setVisibility = useSetSpaceVisibility(name);
   const batchUpload = useBatchFileUpload();
   const { data: remoteFiles } = useQuery({
     queryKey: ["files", space?.name ?? name],
@@ -209,6 +226,8 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     setDuration(space.duration);
     setSyncedContent(space.content);
     setSyncedDuration(space.duration);
+    setPendingPrivate(space.is_private);
+    setPendingPassword(null);
   }
 
   if (is404 && prevSpaceId !== null) {
@@ -217,6 +236,8 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     setDuration(5);
     setSyncedContent("");
     setSyncedDuration(5);
+    setPendingPrivate(false);
+    setPendingPassword(null);
   }
 
   useEffect(() => {
@@ -276,6 +297,66 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
 
   const canToggleLock = isOwner || Boolean(isAdminMode);
   const canDeleteSpace = isOwner || Boolean(isAdminMode) || Boolean(space?.is_admin);
+
+  const isPrivate = isNewSpace ? pendingPrivate : Boolean(space?.is_private);
+  const canSetVisibility =
+    Boolean(user) && (isNewSpace || isOwner || Boolean(isAdminMode));
+
+  function handleVisibilityChange(next: boolean) {
+    if (next) {
+      setPasswordDialogMode(isPrivate ? "rotate" : "set");
+      setPasswordDialogOpen(true);
+      return;
+    }
+
+    if (isNewSpace) {
+      setPendingPrivate(false);
+      setPendingPassword(null);
+      return;
+    }
+
+    if (space?.is_private) handleMakePublic();
+  }
+
+  async function handleMakePublic() {
+    try {
+      await setVisibility.mutateAsync({ is_private: false });
+      toast.success("Space is now public");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update visibility";
+      toast.error(msg);
+    }
+  }
+
+  async function handleSetPassword(password: string) {
+    if (isNewSpace) {
+      setPendingPrivate(true);
+      setPendingPassword(password);
+      setPasswordDialogOpen(false);
+      toast.success("This space will be private once you save it");
+      return;
+    }
+
+    try {
+      await setVisibility.mutateAsync({ is_private: true, password });
+      setPasswordDialogOpen(false);
+      toast.success(
+        passwordDialogMode === "rotate" ? "Password changed" : "Space is now private"
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to set password";
+      toast.error(msg);
+    }
+  }
+
+  async function handleUnlock(password: string) {
+    setUnlockError(undefined);
+    try {
+      await unlockSpace.mutateAsync(password);
+    } catch (err) {
+      setUnlockError(err instanceof Error ? err.message : "Incorrect password");
+    }
+  }
 
   const hasPendingFiles = Boolean(pendingFiles.length);
   const hasContent = Boolean(content.trim());
@@ -462,6 +543,8 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
             content,
             duration,
             files: filesMeta,
+            is_private: pendingPrivate,
+            password: pendingPassword ?? undefined,
           });
         } catch (err) {
           if (uploadedPaths.length) {
@@ -702,6 +785,26 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
               </div>
             </motion.div>
           </motion.div>
+        ) : requiresPassword ? (
+          <motion.div
+            key="gated"
+            variants={fadeIn}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={baseTransition}
+            className="flex flex-col items-center gap-3 py-24 text-center"
+          >
+            <KeyRound className="size-6 text-muted-foreground" />
+            <div>
+              <p className="font-heading text-lg font-medium">
+                {decodeURIComponent(name)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                This space is private
+              </p>
+            </div>
+          </motion.div>
         ) : error && !isNewSpace ? (
           <motion.div
             key="error"
@@ -725,53 +828,24 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
             <motion.div variants={staggerContainer} initial="hidden" animate="visible">
               <motion.div variants={fadeUp} transition={baseTransition} className="mb-10 flex items-start justify-between gap-4">
                 <div className="relative min-w-0 pt-2">
-                  {user && space ? (
-                    canToggleLock ? (
-                      <button
-                        type="button"
-                        onClick={handleToggleLock}
-                        disabled={toggleLock.isPending}
-                        className="flex cursor-pointer items-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <AnimatePresence mode="wait" initial={false}>
-                          <motion.span
-                            key={isLocked ? "locked" : "unlocked"}
-                            variants={iconSwap}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            transition={{ duration: DURATION.fast, ease: EASE_OUT }}
-                            className="inline-flex"
-                          >
-                            {isLocked ? <Lock className="size-2.5" /> : <LockOpen className="size-2.5" />}
-                          </motion.span>
-                        </AnimatePresence>
-                        &nbsp;
-                        <AnimatePresence mode="wait" initial={false}>
-                          <motion.span
-                            key={isLocked ? "locked-text" : "unlocked-text"}
-                            variants={fadeIn}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            transition={{ duration: DURATION.fast }}
-                          >
-                            {isLocked ? "Locked" : "Unlocked"}<span className="hidden sm:inline">&nbsp;Space</span>
-                          </motion.span>
-                        </AnimatePresence>
-                      </button>
-                    ) : (
-                      <p className="flex items-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                        {isLocked ? <Lock className="size-2.5" /> : <LockOpen className="size-2.5" />}
-                        &nbsp;
-                        {isLocked ? "Locked" : "Unlocked"}<span className="hidden sm:inline">&nbsp;Space</span>
-                      </p>
-                    )
-                  ) : (
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      Space
-                    </p>
-                  )}
+                  <div className="flex min-h-8 items-center gap-2">
+                    <SpaceAccessMenu
+                      isPrivate={isPrivate}
+                      isLocked={isLocked}
+                      spaceExists={Boolean(space)}
+                      showLockState={Boolean(user && space)}
+                      canSetVisibility={canSetVisibility}
+                      canToggleLock={canToggleLock && Boolean(space)}
+                      visibilityPending={setVisibility.isPending}
+                      lockPending={toggleLock.isPending}
+                      onVisibilityChange={handleVisibilityChange}
+                      onToggleLock={handleToggleLock}
+                      onRotatePassword={() => {
+                        setPasswordDialogMode("rotate");
+                        setPasswordDialogOpen(true);
+                      }}
+                    />
+                  </div>
                   <h1
                     ref={nameRef}
                     onClick={() => nameClipped && setNameExpanded((v) => !v)}
@@ -1123,6 +1197,22 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SpacePasswordDialog
+        open={requiresPassword}
+        spaceName={decodeURIComponent(name)}
+        onSubmit={handleUnlock}
+        error={unlockError}
+        loading={unlockSpace.isPending}
+      />
+
+      <SetPasswordDialog
+        open={passwordDialogOpen}
+        mode={passwordDialogMode}
+        onSubmit={handleSetPassword}
+        onCancel={() => setPasswordDialogOpen(false)}
+        loading={setVisibility.isPending}
+      />
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent showCloseButton={false} className="sm:max-w-3xl max-h-[85dvh] flex flex-col">

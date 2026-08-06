@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { updateSpaceSchema } from "@/lib/schemas/space.schema";
 import { readRateLimiter, updateRateLimiter } from "@/lib/rate-limit";
 import { isAdmin } from "@/lib/admin";
+import { hasSpaceAccess } from "@/lib/space-authz";
 import { MAX_ANON_DURATION_MINUTES } from "@/lib/constants";
 
 export async function GET(
@@ -28,8 +29,8 @@ export async function GET(
 
   const userIsAdmin = user ? await isAdmin(user.id) : false;
 
-  const client = userIsAdmin ? createAdminClient() : supabase;
-  const { data: space, error } = await client
+  const admin = createAdminClient();
+  const { data: space, error } = await admin
     .from("spaces")
     .select("*")
     .eq("name", name.toLowerCase())
@@ -40,7 +41,6 @@ export async function GET(
   }
 
   if (new Date(space.expires_at) < new Date() && !userIsAdmin) {
-    const admin = createAdminClient();
     const { data: files } = await admin
       .from("files")
       .select("storage_path")
@@ -58,6 +58,13 @@ export async function GET(
 
     await admin.from("spaces").delete().eq("id", space.id);
     return NextResponse.json({ error: "Space expired" }, { status: 404 });
+  }
+
+  if (!(await hasSpaceAccess(space, user?.id ?? null, userIsAdmin))) {
+    return NextResponse.json(
+      { error: "Password required", requires_password: true, name: space.name },
+      { status: 403 }
+    );
   }
 
   const { password_hash: _, claim_token_hash: __, ...safeSpace } = space;
@@ -101,12 +108,19 @@ export async function PATCH(
   const admin = createAdminClient();
   const { data: space } = await admin
     .from("spaces")
-    .select("id, owner_id, is_locked")
+    .select("id, name, owner_id, is_locked, is_private, password_hash, expires_at")
     .eq("name", name.toLowerCase())
     .single();
 
   if (!space) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (!(await hasSpaceAccess(space, user.id, userIsAdmin))) {
+    return NextResponse.json(
+      { error: "Password required", requires_password: true, name: space.name },
+      { status: 403 }
+    );
   }
 
   if (!userIsAdmin) {

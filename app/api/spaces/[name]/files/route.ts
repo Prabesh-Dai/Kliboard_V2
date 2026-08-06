@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdmin } from "@/lib/admin";
+import { hasSpaceAccess, SPACE_SECURITY_COLUMNS } from "@/lib/space-authz";
 import { readRateLimiter, uploadRateLimiter } from "@/lib/rate-limit";
 import {
   ALLOWED_MIME_TYPES,
@@ -58,9 +59,10 @@ export async function POST(
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const { data: space } = await supabase
+  const admin = createAdminClient();
+  const { data: space } = await admin
     .from("spaces")
-    .select("id, owner_id, is_locked")
+    .select(SPACE_SECURITY_COLUMNS)
     .eq("name", name.toLowerCase())
     .single();
 
@@ -69,12 +71,18 @@ export async function POST(
   }
 
   const userIsAdmin = await isAdmin(user.id);
+
+  if (!(await hasSpaceAccess(space, user.id, userIsAdmin))) {
+    return NextResponse.json(
+      { error: "Password required", requires_password: true },
+      { status: 403 }
+    );
+  }
+
   const isOwner = space.owner_id === user.id;
   if (space.is_locked && !isOwner && !userIsAdmin) {
     return NextResponse.json({ error: "Space is locked" }, { status: 403 });
   }
-
-  const admin = createAdminClient();
 
   const { data: existingFiles } = await admin
     .from("files")
@@ -130,9 +138,14 @@ export async function GET(
 
   const [{ name }, supabase] = await Promise.all([params, createClient()]);
 
-  const { data: space } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const admin = createAdminClient();
+  const { data: space } = await admin
     .from("spaces")
-    .select("id")
+    .select(SPACE_SECURITY_COLUMNS)
     .eq("name", name.toLowerCase())
     .single();
 
@@ -140,7 +153,16 @@ export async function GET(
     return NextResponse.json({ error: "Space not found" }, { status: 404 });
   }
 
-  const { data: files, error } = await supabase
+  const userIsAdmin = user ? await isAdmin(user.id) : false;
+
+  if (!(await hasSpaceAccess(space, user?.id ?? null, userIsAdmin))) {
+    return NextResponse.json(
+      { error: "Password required", requires_password: true },
+      { status: 403 }
+    );
+  }
+
+  const { data: files, error } = await admin
     .from("files")
     .select("*")
     .eq("space_id", space.id)
@@ -154,7 +176,6 @@ export async function GET(
     return NextResponse.json([]);
   }
 
-  const admin = createAdminClient();
   const { data: signed } = await admin.storage
     .from("space-files")
     .createSignedUrls(

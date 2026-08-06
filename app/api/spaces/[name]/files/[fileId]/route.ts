@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdmin } from "@/lib/admin";
+import { hasSpaceAccess, SPACE_SECURITY_COLUMNS } from "@/lib/space-authz";
 
 export async function DELETE(
   _request: Request,
@@ -17,7 +18,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: file } = await supabase
+  const admin = createAdminClient();
+  const { data: file } = await admin
     .from("files")
     .select("id, storage_path, space_id")
     .eq("id", fileId)
@@ -27,9 +29,9 @@ export async function DELETE(
     return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
 
-  const { data: space } = await supabase
+  const { data: space } = await admin
     .from("spaces")
-    .select("owner_id, is_locked")
+    .select(SPACE_SECURITY_COLUMNS)
     .eq("id", file.space_id)
     .single();
 
@@ -38,12 +40,19 @@ export async function DELETE(
   }
 
   const userIsAdmin = await isAdmin(user.id);
+
+  if (!(await hasSpaceAccess(space, user.id, userIsAdmin))) {
+    return NextResponse.json(
+      { error: "Password required", requires_password: true },
+      { status: 403 }
+    );
+  }
+
   const isOwner = space.owner_id === user.id;
   if (space.is_locked && !isOwner && !userIsAdmin) {
     return NextResponse.json({ error: "Space is locked" }, { status: 403 });
   }
 
-  const admin = createAdminClient();
   const { data: deleted, error } = await admin
     .from("files")
     .delete()

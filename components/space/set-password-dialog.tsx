@@ -11,42 +11,56 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield } from "lucide-react";
+import { KeyRound, Loader2 } from "lucide-react";
+import { MIN_SPACE_PASSWORD_LENGTH } from "@/lib/constants";
 
 interface SetPasswordDialogProps {
   open: boolean;
+  mode?: "set" | "rotate";
   onSubmit: (password: string) => void;
   onCancel: () => void;
+  error?: string;
   loading?: boolean;
 }
 
 export function SetPasswordDialog({
   open,
+  mode = "set",
   onSubmit,
   onCancel,
+  error,
   loading,
 }: SetPasswordDialogProps) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
 
+  const tooShort = password.length > 0 && password.length < MIN_SPACE_PASSWORD_LENGTH;
+  const mismatch = confirm.length > 0 && password !== confirm;
+  const valid = password.length >= MIN_SPACE_PASSWORD_LENGTH && password === confirm;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length >= 4 && password === confirm) onSubmit(password);
+    if (valid && !loading) onSubmit(password);
   }
 
-  const mismatch = confirm.length > 0 && password !== confirm;
-  const tooShort = password.length > 0 && password.length < 4;
+  function handleCancel() {
+    setPassword("");
+    setConfirm("");
+    onCancel();
+  }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
+    <Dialog open={open} onOpenChange={(v) => !v && !loading && handleCancel()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Shield className="size-5" />
-            Set Space Password
+            <KeyRound className="size-5" />
+            {mode === "rotate" ? "Change Space Password" : "Set Space Password"}
           </DialogTitle>
           <DialogDescription>
-            This space will be private. Set a password so others can access it.
+            {mode === "rotate"
+              ? "Anyone still holding the old password will be signed out of this space."
+              : "This space becomes private. Only you and people you give the password to can open it."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -55,14 +69,15 @@ export function SetPasswordDialog({
             <Input
               id="set-password"
               type="password"
-              placeholder="Min 4 characters"
+              autoComplete="new-password"
+              placeholder={`Min ${MIN_SPACE_PASSWORD_LENGTH} characters`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
             />
             {tooShort && (
               <p className="text-sm text-destructive">
-                Password must be at least 4 characters
+                Password must be at least {MIN_SPACE_PASSWORD_LENGTH} characters
               </p>
             )}
           </div>
@@ -71,6 +86,7 @@ export function SetPasswordDialog({
             <Input
               id="confirm-password"
               type="password"
+              autoComplete="new-password"
               placeholder="Repeat password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
@@ -79,26 +95,24 @@ export function SetPasswordDialog({
               <p className="text-sm text-destructive">Passwords do not match</p>
             )}
           </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={onCancel}
+              onClick={handleCancel}
+              disabled={loading}
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={
-                !password ||
-                password.length < 4 ||
-                password !== confirm ||
-                loading
-              }
-            >
-              {loading ? "Saving..." : "Save Private"}
+            <Button type="submit" className="flex-1" disabled={!valid || loading}>
+              {loading && <Loader2 className="size-3.5 animate-spin" />}
+              {loading
+                ? "Saving..."
+                : mode === "rotate"
+                  ? "Change password"
+                  : "Make private"}
             </Button>
           </div>
         </form>

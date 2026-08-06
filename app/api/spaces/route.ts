@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeRateLimiter, anonCreateRateLimiter } from "@/lib/rate-limit";
 import { generateClaimToken, hashClaimToken } from "@/lib/claim-token";
+import { hashSpacePassword } from "@/lib/space-access";
 import { addMinutes } from "date-fns";
 import {
   GLOBAL_ANON_SPACE_CAP,
@@ -65,12 +66,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, content, duration, files } = parsed.data;
+  const { name, content, duration, files, is_private, password } = parsed.data;
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user && is_private) {
+    return NextResponse.json(
+      { error: "Sign in to create a private space" },
+      { status: 403 }
+    );
+  }
 
   if (!user && duration > MAX_ANON_DURATION_MINUTES) {
     return NextResponse.json(
@@ -123,6 +131,9 @@ export async function POST(request: Request) {
     is_locked: true,
     owner_id: user?.id ?? null,
     claim_token_hash: claimTokenHash,
+    is_private,
+    password_hash:
+      is_private && password ? await hashSpacePassword(password) : null,
   };
 
   const { data, error } = await supabase
@@ -186,7 +197,11 @@ export async function POST(request: Request) {
         await insertFiles(retryData.id, files);
       }
 
-      const { claim_token_hash: _retryHash, ...safeRetry } = retryData;
+      const {
+        claim_token_hash: _retryHash,
+        password_hash: _retryPassword,
+        ...safeRetry
+      } = retryData;
       return NextResponse.json(
         claimToken ? { ...safeRetry, claim_token: claimToken } : safeRetry,
         { status: 201 }
@@ -199,7 +214,7 @@ export async function POST(request: Request) {
     await insertFiles(data.id, files);
   }
 
-  const { claim_token_hash: _hash, ...safeData } = data;
+  const { claim_token_hash: _hash, password_hash: _password, ...safeData } = data;
   return NextResponse.json(
     claimToken ? { ...safeData, claim_token: claimToken } : safeData,
     { status: 201 }

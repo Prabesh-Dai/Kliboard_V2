@@ -80,6 +80,10 @@ Treat this file as living documentation. When the user shares a notable rule, co
 - **Lazy deletion** as primary expiration strategy, Vercel Cron as backup
 - **File uploads** go directly from client to Supabase Storage (bypasses Vercel 4.5MB limit)
 - **Auth is optional.** All space CRUD works without login
+- **Two independent gates per space.** `is_private` gates *reading*, `is_locked` gates *writing*. Don't conflate them
+- **Private spaces** are password-shared: owner sets a password (bcrypt in `password_hash`), readers POST it to `/api/spaces/[name]/access` and get an HttpOnly access-grant cookie. The grant HMAC is bound to `password_hash`, so rotating or clearing the password revokes every outstanding grant. Requires `SPACE_ACCESS_SECRET` (≥32 chars); the helpers fail closed without it
+- **Authorize private spaces in the route, not via RLS.** Password-holders aren't authenticated as the owner, so RLS can't see them — routes read the space with the admin client and call `hasSpaceAccess()` from `lib/space-authz.ts`. Gate every read/write path that touches space content or files
+- **Never return `password_hash` or `claim_token_hash`** in an API response; destructure them out
 - **Space names:** letters and hyphens, 3-24 chars, start/end with letter, lowercase on server
 - **Duration values in minutes:** 5, 60, 600, 1440, 14400
 - **Supabase publishable key** (not legacy anon key): `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`

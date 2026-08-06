@@ -8,7 +8,17 @@ import {
   ALLOWED_MIME_TYPES,
   MAX_FILE_SIZE_BYTES,
   MAX_FILES_PER_SPACE,
+  MIN_SPACE_PASSWORD_LENGTH,
+  MAX_SPACE_PASSWORD_LENGTH,
 } from "@/lib/constants";
+
+const spacePasswordSchema = z
+  .string()
+  .min(
+    MIN_SPACE_PASSWORD_LENGTH,
+    `Password must be at least ${MIN_SPACE_PASSWORD_LENGTH} characters`
+  )
+  .max(MAX_SPACE_PASSWORD_LENGTH, "Password too long");
 
 const spaceNameSchema = z
   .string()
@@ -35,20 +45,27 @@ const fileMetadataItemSchema = z.object({
     .max(MAX_FILE_SIZE_BYTES, "File too large (max 10MB)"),
 });
 
-export const createSpaceSchema = z.object({
-  name: spaceNameSchema,
-  content: z
-    .string()
-    .max(MAX_CONTENT_LENGTH, "Content too long")
-    .optional()
-    .default(""),
-  duration: z
-    .number()
-    .optional()
-    .default(5)
-    .refine((v) => DURATION_VALUES.includes(v as number), "Invalid duration"),
-  files: z.array(fileMetadataItemSchema).max(MAX_FILES_PER_SPACE).optional(),
-});
+export const createSpaceSchema = z
+  .object({
+    name: spaceNameSchema,
+    content: z
+      .string()
+      .max(MAX_CONTENT_LENGTH, "Content too long")
+      .optional()
+      .default(""),
+    duration: z
+      .number()
+      .optional()
+      .default(5)
+      .refine((v) => DURATION_VALUES.includes(v as number), "Invalid duration"),
+    files: z.array(fileMetadataItemSchema).max(MAX_FILES_PER_SPACE).optional(),
+    is_private: z.boolean().optional().default(false),
+    password: spacePasswordSchema.optional(),
+  })
+  .refine((data) => !data.is_private || Boolean(data.password), {
+    message: "A private space needs a password",
+    path: ["password"],
+  });
 
 export const updateSpaceSchema = z.object({
   content: z.string().max(MAX_CONTENT_LENGTH).optional(),
@@ -62,6 +79,16 @@ export const claimSpaceSchema = z.object({
   token: z.string().min(16).max(256),
 });
 
+export const setVisibilitySchema = z.discriminatedUnion("is_private", [
+  z.object({ is_private: z.literal(true), password: spacePasswordSchema }),
+  z.object({ is_private: z.literal(false) }),
+]);
+
+export const verifySpacePasswordSchema = z.object({
+  password: z.string().min(1).max(MAX_SPACE_PASSWORD_LENGTH),
+});
+
 export type CreateSpaceInput = z.infer<typeof createSpaceSchema>;
 export type UpdateSpaceInput = z.infer<typeof updateSpaceSchema>;
 export type ClaimSpaceInput = z.infer<typeof claimSpaceSchema>;
+export type SetVisibilityInput = z.infer<typeof setVisibilitySchema>;

@@ -41,3 +41,7 @@ export const anonCreateRateLimiter = isDev
 export const claimRateLimiter = isDev
   ? noopLimiter
   : new Ratelimit({ redis: getRedis(), limiter: Ratelimit.slidingWindow(5, "24 h"), prefix: "rl:claim" });
+
+export const passwordAttemptRateLimiter = isDev
+  ? noopLimiter
+  : new Ratelimit({ redis: getRedis(), limiter: Ratelimit.slidingWindow(10, "15 m"), prefix: "rl:space-pw" });

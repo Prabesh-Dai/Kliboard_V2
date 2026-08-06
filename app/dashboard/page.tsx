@@ -30,13 +30,14 @@ import {
   screenFade,
   baseTransition,
 } from "@/lib/animations";
-import { Trash2, ExternalLink, Clock, Lock, LockOpen, Loader2, Plus } from "lucide-react";
+import { Trash2, ExternalLink, Clock, Lock, LockOpen, Loader2, Plus, KeyRound } from "lucide-react";
 
 interface UserSpace {
   id: string;
   name: string;
   content: string;
   is_locked: boolean;
+  is_private: boolean;
   duration: number;
   expires_at: string;
   created_at: string;
@@ -61,7 +62,9 @@ export default function DashboardPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("spaces")
-        .select("*")
+        .select(
+          "id, name, content, is_locked, is_private, duration, expires_at, created_at, updated_at"
+        )
         .eq("owner_id", user!.id)
         .order("updated_at", { ascending: false });
 
@@ -184,6 +187,11 @@ export default function DashboardPage() {
                             <><LockOpen className="mr-1 size-3" />Unlocked</>
                           )}
                         </Badge>
+                        {space.is_private && (
+                          <Badge variant="secondary">
+                            <KeyRound className="mr-1 size-3" />Private
+                          </Badge>
+                        )}
                         {expired && (
                           <Badge variant="destructive">Expired</Badge>
                         )}
