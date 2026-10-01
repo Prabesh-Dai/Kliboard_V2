@@ -21,6 +21,7 @@ interface AdminSpace {
   owner_id: string | null;
   owner_email: string | null;
   is_locked: boolean;
+  encryption_version?: number | null;
   created_at: string;
   updated_at: string;
 }

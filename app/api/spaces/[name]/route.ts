@@ -7,7 +7,7 @@ import { updateSpaceSchema } from "@/lib/schemas/space.schema";
 import { readRateLimiter, updateRateLimiter } from "@/lib/rate-limit";
 import { isAdmin } from "@/lib/admin";
 import { hasSpaceAccess } from "@/lib/space-authz";
-import { MAX_ANON_DURATION_MINUTES } from "@/lib/constants";
+import { MAX_ANON_DURATION_MINUTES, MAX_CONTENT_LENGTH } from "@/lib/constants";
 
 export async function GET(
   request: Request,
@@ -62,7 +62,18 @@ export async function GET(
 
   if (!(await hasSpaceAccess(space, user?.id ?? null, userIsAdmin))) {
     return NextResponse.json(
-      { error: "Password required", requires_password: true, name: space.name },
+      {
+        error: "Password required",
+        requires_password: true,
+        name: space.name,
+        encryption: space.encryption_version
+          ? {
+              version: space.encryption_version,
+              kdf_salt: space.kdf_salt,
+              kdf_iterations: space.kdf_iterations,
+            }
+          : null,
+      },
       { status: 403 }
     );
   }
@@ -108,7 +119,9 @@ export async function PATCH(
   const admin = createAdminClient();
   const { data: space } = await admin
     .from("spaces")
-    .select("id, name, owner_id, is_locked, is_private, password_hash, expires_at")
+    .select(
+      "id, name, owner_id, is_locked, is_private, password_hash, expires_at, encryption_version"
+    )
     .eq("name", name.toLowerCase())
     .single();
 
@@ -136,6 +149,12 @@ export async function PATCH(
     expires_at?: string;
   } = {};
   if (parsed.data.content !== undefined) {
+    if (
+      !space.encryption_version &&
+      parsed.data.content.length > MAX_CONTENT_LENGTH
+    ) {
+      return NextResponse.json({ error: "Content too long" }, { status: 400 });
+    }
     updateData.content = parsed.data.content;
   }
   if (parsed.data.duration !== undefined) {

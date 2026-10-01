@@ -22,7 +22,13 @@ async function removeStorage(paths: string[]) {
 
 async function insertFiles(
   spaceId: string,
-  files: { filename: string; storage_path: string; mime_type: string; size_bytes: number }[]
+  files: {
+    filename: string;
+    storage_path: string;
+    mime_type: string;
+    size_bytes: number;
+    encryption_version?: number;
+  }[]
 ) {
   const totalSize = files.reduce((sum, f) => sum + f.size_bytes, 0);
   if (totalSize > MAX_SPACE_STORAGE_BYTES) {
@@ -38,6 +44,7 @@ async function insertFiles(
       storage_path: f.storage_path,
       mime_type: f.mime_type,
       size_bytes: f.size_bytes,
+      encryption_version: f.encryption_version ?? null,
     }))
   );
 
@@ -66,7 +73,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, content, duration, files, is_private, password } = parsed.data;
+  const { name, content, duration, files, is_private, encryption } = parsed.data;
   const supabase = await createClient();
 
   const {
@@ -132,8 +139,13 @@ export async function POST(request: Request) {
     owner_id: user?.id ?? null,
     claim_token_hash: claimTokenHash,
     is_private,
-    password_hash:
-      is_private && password ? await hashSpacePassword(password) : null,
+    password_hash: encryption
+      ? await hashSpacePassword(encryption.auth_token)
+      : null,
+    encryption_version: encryption?.version ?? null,
+    kdf_salt: encryption?.kdf_salt ?? null,
+    kdf_iterations: encryption?.kdf_iterations ?? null,
+    wrapped_dek: encryption?.wrapped_dek ?? null,
   };
 
   const { data, error } = await supabase

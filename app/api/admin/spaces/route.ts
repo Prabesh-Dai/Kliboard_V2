@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   let query = admin
     .from("spaces")
-    .select("id, name, content, duration, expires_at, owner_id, is_locked, created_at, updated_at", { count: "exact" })
+    .select("id, name, content, duration, expires_at, owner_id, is_locked, created_at, updated_at, encryption_version", { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1);
 

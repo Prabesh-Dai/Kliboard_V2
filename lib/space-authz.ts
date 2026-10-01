@@ -9,10 +9,11 @@ export interface AccessSubject {
   is_private: boolean;
   password_hash: string | null;
   expires_at: string;
+  encryption_version?: number | null;
 }
 
 export const SPACE_SECURITY_COLUMNS =
-  "id, name, owner_id, is_private, password_hash, expires_at, is_locked";
+  "id, name, owner_id, is_private, password_hash, expires_at, is_locked, encryption_version";
 
 export async function hasSpaceAccess(
   space: AccessSubject,

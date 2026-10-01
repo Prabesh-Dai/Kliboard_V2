@@ -37,6 +37,7 @@ interface UserSpace {
   name: string;
   content: string;
   is_locked: boolean;
+  encryption_version?: number | null;
   is_private: boolean;
   duration: number;
   expires_at: string;
@@ -63,7 +64,7 @@ export default function DashboardPage() {
       const { data, error } = await supabase
         .from("spaces")
         .select(
-          "id, name, content, is_locked, is_private, duration, expires_at, created_at, updated_at"
+          "id, name, content, is_locked, is_private, duration, expires_at, created_at, updated_at, encryption_version"
         )
         .eq("owner_id", user!.id)
         .order("updated_at", { ascending: false });
@@ -197,7 +198,9 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <p className="mt-1.5 truncate font-mono text-sm text-muted-foreground">
-                        {space.content}
+                        {space.encryption_version
+                          ? "Encrypted — open the space to read it"
+                          : space.content}
                       </p>
                       <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="size-3" />

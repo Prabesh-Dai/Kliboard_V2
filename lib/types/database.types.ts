@@ -23,6 +23,10 @@ export interface Database {
           claim_token_hash: string | null;
           created_at: string;
           updated_at: string;
+          encryption_version: number | null;
+          kdf_salt: string | null;
+          kdf_iterations: number | null;
+          wrapped_dek: string | null;
         };
         Insert: {
           id?: string;
@@ -37,6 +41,10 @@ export interface Database {
           claim_token_hash?: string | null;
           created_at?: string;
           updated_at?: string;
+          encryption_version?: number | null;
+          kdf_salt?: string | null;
+          kdf_iterations?: number | null;
+          wrapped_dek?: string | null;
         };
         Update: {
           id?: string;
@@ -51,6 +59,10 @@ export interface Database {
           claim_token_hash?: string | null;
           created_at?: string;
           updated_at?: string;
+          encryption_version?: number | null;
+          kdf_salt?: string | null;
+          kdf_iterations?: number | null;
+          wrapped_dek?: string | null;
         };
         Relationships: [];
       };
@@ -63,6 +75,7 @@ export interface Database {
           mime_type: string;
           size_bytes: number;
           created_at: string;
+          encryption_version: number | null;
         };
         Insert: {
           id?: string;
@@ -72,6 +85,7 @@ export interface Database {
           mime_type: string;
           size_bytes: number;
           created_at?: string;
+          encryption_version?: number | null;
         };
         Update: {
           id?: string;
@@ -81,6 +95,7 @@ export interface Database {
           mime_type?: string;
           size_bytes?: number;
           created_at?: string;
+          encryption_version?: number | null;
         };
         Relationships: [
           {

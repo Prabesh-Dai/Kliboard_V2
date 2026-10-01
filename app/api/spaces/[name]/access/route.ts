@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { verifySpacePasswordSchema } from "@/lib/schemas/space.schema";
-import { passwordAttemptRateLimiter } from "@/lib/rate-limit";
+import { verifySpaceAccessSchema } from "@/lib/schemas/space.schema";
+import {
+  passwordAttemptRateLimiter,
+  spacePasswordRateLimiter,
+} from "@/lib/rate-limit";
 import {
   accessCookieName,
   burnPasswordComparison,
@@ -20,10 +23,11 @@ export async function POST(
   const normalizedName = name.toLowerCase();
   const ip = headerList.get("x-forwarded-for") ?? "anonymous";
 
-  const { success } = await passwordAttemptRateLimiter.limit(
-    `${ip}:${normalizedName}`
-  );
-  if (!success) {
+  const [perIp, perSpace] = await Promise.all([
+    passwordAttemptRateLimiter.limit(`${ip}:${normalizedName}`),
+    spacePasswordRateLimiter.limit(normalizedName),
+  ]);
+  if (!perIp.success || !perSpace.success) {
     return NextResponse.json(
       { error: "Too many attempts. Try again later." },
       { status: 429 }
@@ -37,32 +41,40 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = verifySpacePasswordSchema.safeParse(body);
+  const parsed = verifySpaceAccessSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(INVALID, { status: 401 });
   }
 
+  const presented =
+    "auth_token" in parsed.data ? parsed.data.auth_token : parsed.data.password;
+  const presentedIsToken = "auth_token" in parsed.data;
+
   const admin = createAdminClient();
   const { data: space } = await admin
     .from("spaces")
-    .select("id, name, is_private, password_hash, expires_at")
+    .select(
+      "id, name, is_private, password_hash, expires_at, encryption_version, wrapped_dek"
+    )
     .eq("name", normalizedName)
     .single();
 
   if (!space || !space.is_private || !space.password_hash) {
-    await burnPasswordComparison(parsed.data.password);
+    await burnPasswordComparison(presented);
+    return NextResponse.json(INVALID, { status: 401 });
+  }
+
+  if (presentedIsToken !== Boolean(space.encryption_version)) {
+    await burnPasswordComparison(presented);
     return NextResponse.json(INVALID, { status: 401 });
   }
 
   if (new Date(space.expires_at) < new Date()) {
-    await burnPasswordComparison(parsed.data.password);
+    await burnPasswordComparison(presented);
     return NextResponse.json({ error: "Space expired" }, { status: 404 });
   }
 
-  const matches = await verifySpacePassword(
-    parsed.data.password,
-    space.password_hash
-  );
+  const matches = await verifySpacePassword(presented, space.password_hash);
   if (!matches) {
     return NextResponse.json(INVALID, { status: 401 });
   }
@@ -72,7 +84,10 @@ export async function POST(
     return NextResponse.json({ error: "Space expired" }, { status: 404 });
   }
 
-  const response = NextResponse.json({ granted: true });
+  const response = NextResponse.json({
+    granted: true,
+    wrapped_dek: space.wrapped_dek,
+  });
   response.cookies.set(accessCookieName(space.name), grant.value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

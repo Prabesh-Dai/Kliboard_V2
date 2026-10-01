@@ -20,6 +20,8 @@ interface SpacePasswordDialogProps {
   onSubmit: (password: string) => void;
   error?: string;
   loading?: boolean;
+  encrypted?: boolean;
+  ownerView?: boolean;
 }
 
 export function SpacePasswordDialog({
@@ -28,6 +30,8 @@ export function SpacePasswordDialog({
   onSubmit,
   error,
   loading,
+  encrypted,
+  ownerView,
 }: SpacePasswordDialogProps) {
   const [password, setPassword] = useState("");
 
@@ -42,11 +46,13 @@ export function SpacePasswordDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="size-5" />
-            Password Required
+            {ownerView ? "Unlock Your Space" : "Password Required"}
           </DialogTitle>
           <DialogDescription>
-            <span className="font-medium text-foreground">{spaceName}</span> is a
-            private space. Enter its password to view the contents.
+            <span className="font-medium text-foreground">{spaceName}</span>{" "}
+            {encrypted
+              ? "is encrypted. Its password is the decryption key, so it is needed even if you own the space."
+              : "is a private space. Enter its password to view the contents."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,9 +71,14 @@ export function SpacePasswordDialog({
           </div>
           <Button type="submit" className="w-full" disabled={!password || loading}>
             {loading && <Loader2 className="size-3.5 animate-spin" />}
-            {loading ? "Verifying..." : "Unlock"}
+            {loading ? (encrypted ? "Decrypting..." : "Verifying...") : "Unlock"}
           </Button>
         </form>
+        {encrypted && (
+          <p className="text-center text-[11px] text-muted-foreground">
+            Unlocking runs entirely in your browser and can take a moment.
+          </p>
+        )}
         <NextLink
           href="/"
           className="text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"

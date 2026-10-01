@@ -11,8 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound, Loader2 } from "lucide-react";
+import { KeyRound, Loader2, ShieldAlert, Sparkles } from "lucide-react";
 import { MIN_SPACE_PASSWORD_LENGTH } from "@/lib/constants";
+import { generatePassphrase, scorePassword } from "@/lib/password-strength";
 
 interface SetPasswordDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface SetPasswordDialogProps {
   onCancel: () => void;
   error?: string;
   loading?: boolean;
+  busyLabel?: string;
 }
 
 export function SetPasswordDialog({
@@ -30,13 +32,15 @@ export function SetPasswordDialog({
   onCancel,
   error,
   loading,
+  busyLabel,
 }: SetPasswordDialogProps) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [revealed, setRevealed] = useState(false);
 
-  const tooShort = password.length > 0 && password.length < MIN_SPACE_PASSWORD_LENGTH;
+  const strength = scorePassword(password);
   const mismatch = confirm.length > 0 && password !== confirm;
-  const valid = password.length >= MIN_SPACE_PASSWORD_LENGTH && password === confirm;
+  const valid = strength.acceptable && password === confirm;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,7 +50,15 @@ export function SetPasswordDialog({
   function handleCancel() {
     setPassword("");
     setConfirm("");
+    setRevealed(false);
     onCancel();
+  }
+
+  function handleGenerate() {
+    const generated = generatePassphrase();
+    setPassword(generated);
+    setConfirm(generated);
+    setRevealed(true);
   }
 
   return (
@@ -59,33 +71,74 @@ export function SetPasswordDialog({
           </DialogTitle>
           <DialogDescription>
             {mode === "rotate"
-              ? "Anyone still holding the old password will be signed out of this space."
-              : "This space becomes private. Only you and people you give the password to can open it."}
+              ? "Anyone still holding the old password loses access. Your content is re-keyed, not re-encrypted."
+              : "This space becomes private and its contents are encrypted in your browser before they are sent."}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex items-start gap-2 rounded-sm bg-surface-container-high p-3">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <p className="text-xs text-muted-foreground">
+            The server never sees this password, so it cannot reset it. Lose the
+            password and the contents are gone for good.
+          </p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="set-password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="set-password">Password</Label>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                className="flex cursor-pointer items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Sparkles className="size-3" />
+                Generate
+              </button>
+            </div>
             <Input
               id="set-password"
-              type="password"
+              type={revealed ? "text" : "password"}
               autoComplete="new-password"
               placeholder={`Min ${MIN_SPACE_PASSWORD_LENGTH} characters`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
             />
-            {tooShort && (
-              <p className="text-sm text-destructive">
-                Password must be at least {MIN_SPACE_PASSWORD_LENGTH} characters
-              </p>
+            {password.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4].map((step) => (
+                    <span
+                      key={step}
+                      className={`h-1 flex-1 rounded-sm transition-colors ${
+                        strength.score >= step
+                          ? strength.acceptable
+                            ? "bg-primary"
+                            : "bg-destructive"
+                          : "bg-surface-container-high"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p
+                  className={`text-xs ${
+                    strength.acceptable ? "text-muted-foreground" : "text-destructive"
+                  }`}
+                >
+                  {strength.label}
+                  {strength.hint ? ` — ${strength.hint}` : ""}
+                </p>
+              </div>
             )}
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="confirm-password">Confirm Password</Label>
             <Input
               id="confirm-password"
-              type="password"
+              type={revealed ? "text" : "password"}
               autoComplete="new-password"
               placeholder="Repeat password"
               value={confirm}
@@ -95,7 +148,9 @@ export function SetPasswordDialog({
               <p className="text-sm text-destructive">Passwords do not match</p>
             )}
           </div>
+
           {error && <p className="text-sm text-destructive">{error}</p>}
+
           <div className="flex gap-2">
             <Button
               type="button"
@@ -109,10 +164,10 @@ export function SetPasswordDialog({
             <Button type="submit" className="flex-1" disabled={!valid || loading}>
               {loading && <Loader2 className="size-3.5 animate-spin" />}
               {loading
-                ? "Saving..."
+                ? (busyLabel ?? "Saving...")
                 : mode === "rotate"
                   ? "Change password"
-                  : "Make private"}
+                  : "Encrypt & make private"}
             </Button>
           </div>
         </form>

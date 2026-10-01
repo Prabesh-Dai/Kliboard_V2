@@ -31,6 +31,7 @@ interface SpaceAccessMenuProps {
   canSetVisibility: boolean;
   canToggleLock: boolean;
   visibilityPending?: boolean;
+  busyLabel?: string;
   lockPending?: boolean;
   onVisibilityChange: (isPrivate: boolean) => void;
   onToggleLock: () => void;
@@ -66,6 +67,7 @@ export function SpaceAccessMenu({
   canSetVisibility,
   canToggleLock,
   visibilityPending,
+  busyLabel,
   lockPending,
   onVisibilityChange,
   onToggleLock,
@@ -114,6 +116,7 @@ export function SpaceAccessMenu({
   }
 
   return (
+    <>
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
         className={`${LABEL_CLASS} cursor-pointer rounded-sm outline-none transition-colors hover:text-foreground focus-visible:text-foreground`}
@@ -178,5 +181,11 @@ export function SpaceAccessMenu({
         )}
       </DropdownMenuContent>
     </DropdownMenu>
+    {busyLabel && (
+      <span className="whitespace-nowrap text-[10px] uppercase tracking-wider text-muted-foreground">
+        {busyLabel}
+      </span>
+    )}
+    </>
   );
 }

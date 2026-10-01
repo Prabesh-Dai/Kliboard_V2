@@ -8,6 +8,11 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSpaceFiles } from "@/hooks/use-file-upload";
+import { useSpaceKey } from "@/hooks/use-space-key";
+import {
+  decryptFileMetadata,
+  fetchAndDecryptFile,
+} from "@/lib/crypto/space-files";
 import { fileItemVariants, baseTransition, fadeIn, scaleReveal, screenFade } from "@/lib/animations";
 import { SIGNED_URL_TTL_SECONDS } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,6 +64,7 @@ interface FileRecord {
   size_bytes: number;
   created_at: string;
   signed_url: string | null;
+  encryption_version?: number | null;
 }
 
 interface FileListProps {
@@ -331,21 +337,62 @@ export function FileList({
 }: FileListProps) {
   const { deleteFile } = useSpaceFiles(spaceName);
   const queryClient = useQueryClient();
+  const dek = useSpaceKey(spaceName);
 
   const { data: remoteFiles, isLoading } = useQuery({
-    queryKey: ["files", spaceName],
+    queryKey: ["files", spaceName, dek ? "unlocked" : "locked"],
     queryFn: async () => {
       const res = await fetch(`/api/spaces/${spaceName}/files`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error ?? "Failed to load files");
       }
-      return res.json() as Promise<FileRecord[]>;
+
+      const rows = (await res.json()) as FileRecord[];
+      if (!dek || !rows.some((row) => row.encryption_version)) return rows;
+
+      return Promise.all(
+        rows.map(async (row) => {
+          if (!row.encryption_version) return row;
+          try {
+            const meta = await decryptFileMetadata(dek, row);
+            let url: string | null = null;
+            let size = row.size_bytes;
+
+            if (row.signed_url) {
+              const bytes = await fetchAndDecryptFile(dek, row.signed_url);
+              const blob = new Blob([bytes], { type: meta.mimeType });
+              url = URL.createObjectURL(blob);
+              size = blob.size;
+            }
+
+            return {
+              ...row,
+              filename: meta.filename,
+              mime_type: meta.mimeType,
+              size_bytes: size,
+              signed_url: url,
+            };
+          } catch (err) {
+            console.error("Could not decrypt a file in this space", err);
+            return { ...row, filename: "Encrypted file", signed_url: null };
+          }
+        })
+      );
     },
     enabled: Boolean(spaceName),
-    staleTime: (SIGNED_URL_TTL_SECONDS - 600) * 1000,
+    staleTime: Math.max(SIGNED_URL_TTL_SECONDS - 60, 30) * 1000,
     refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    const urls = (remoteFiles ?? [])
+      .filter((f) => f.encryption_version && f.signed_url)
+      .map((f) => f.signed_url as string);
+    return () => {
+      for (const url of urls) URL.revokeObjectURL(url);
+    };
+  }, [remoteFiles]);
 
   const items: UnifiedItem[] = useMemo(() => {
     const remoteKeys = new Set<string>();

@@ -4,6 +4,11 @@ import { useState, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyUploadError } from "@/lib/upload-errors";
+import { SPACE_ENCRYPTION_VERSION } from "@/lib/constants";
+import {
+  encryptFileForUpload,
+  uploadViaSignedSlot,
+} from "@/lib/crypto/space-files";
 
 const MAX_CONCURRENT = 3;
 const UPLOAD_TIMEOUT_MS = 60_000;
@@ -27,6 +32,7 @@ export interface StorageUploadResult {
   storage_path: string;
   mime_type: string;
   size_bytes: number;
+  encryption_version?: number;
   success: boolean;
   error?: string;
 }
@@ -58,7 +64,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 export async function uploadFilesToStorage(
   items: UploadItem[],
   spaceName: string,
-  onProgress?: (completed: number, total: number) => void
+  onProgress?: (completed: number, total: number) => void,
+  dek?: CryptoKey | null
 ): Promise<StorageUploadResult[]> {
   const supabase = createClient();
   const results: StorageUploadResult[] = [];
@@ -67,11 +74,30 @@ export async function uploadFilesToStorage(
   onProgress?.(0, total);
 
   for (const { id, file } of items) {
-    const path = `${spaceName}/${crypto.randomUUID()}-${file.name}`;
+    const path = dek
+      ? `${spaceName}/${crypto.randomUUID()}`
+      : `${spaceName}/${crypto.randomUUID()}-${file.name}`;
+
     let uploadError: unknown;
+    let metadata = {
+      filename: file.name,
+      mime_type: file.type,
+      size_bytes: file.size,
+    };
+
     try {
+      let body: Blob = file;
+      if (dek) {
+        const encrypted = await encryptFileForUpload(dek, file);
+        body = encrypted.blob;
+        metadata = {
+          filename: encrypted.filename,
+          mime_type: encrypted.mime_type,
+          size_bytes: encrypted.size_bytes,
+        };
+      }
       const { error } = await withTimeout(
-        supabase.storage.from("space-files").upload(path, file),
+        supabase.storage.from("space-files").upload(path, body),
         UPLOAD_TIMEOUT_MS
       );
       uploadError = error;
@@ -79,26 +105,14 @@ export async function uploadFilesToStorage(
       uploadError = err;
     }
 
-    if (uploadError) {
-      results.push({
-        id,
-        filename: file.name,
-        storage_path: path,
-        mime_type: file.type,
-        size_bytes: file.size,
-        success: false,
-        error: friendlyUploadError(uploadError),
-      });
-    } else {
-      results.push({
-        id,
-        filename: file.name,
-        storage_path: path,
-        mime_type: file.type,
-        size_bytes: file.size,
-        success: true,
-      });
-    }
+    results.push({
+      id,
+      storage_path: path,
+      ...metadata,
+      encryption_version: dek ? SPACE_ENCRYPTION_VERSION : undefined,
+      success: !uploadError,
+      error: uploadError ? friendlyUploadError(uploadError) : undefined,
+    });
 
     onProgress?.(results.length, total);
   }
@@ -116,10 +130,12 @@ export function useBatchFileUpload() {
       items,
       spaceName,
       spaceId,
+      dek,
     }: {
       items: UploadItem[];
       spaceName: string;
       spaceId: string;
+      dek?: CryptoKey | null;
     }) => {
       const results: UploadResult[] = [];
       setProgress({ completed: 0, total: items.length });
@@ -128,14 +144,33 @@ export function useBatchFileUpload() {
       const inFlight: Promise<void>[] = [];
 
       async function uploadOne({ id, file }: UploadItem) {
-        const path = `${spaceName}/${crypto.randomUUID()}-${file.name}`;
+        let path = `${spaceName}/${crypto.randomUUID()}-${file.name}`;
+        let metadata = {
+          filename: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+        };
         let uploadError: unknown;
+
         try {
-          const { error } = await withTimeout(
-            supabase.storage.from("space-files").upload(path, file),
-            UPLOAD_TIMEOUT_MS
-          );
-          uploadError = error;
+          if (dek) {
+            const encrypted = await encryptFileForUpload(dek, file);
+            metadata = {
+              filename: encrypted.filename,
+              mime_type: encrypted.mime_type,
+              size_bytes: encrypted.size_bytes,
+            };
+            path = await withTimeout(
+              uploadViaSignedSlot(spaceName, encrypted.blob),
+              UPLOAD_TIMEOUT_MS
+            );
+          } else {
+            const { error } = await withTimeout(
+              supabase.storage.from("space-files").upload(path, file),
+              UPLOAD_TIMEOUT_MS
+            );
+            uploadError = error;
+          }
         } catch (err) {
           uploadError = err;
         }
@@ -156,11 +191,10 @@ export function useBatchFileUpload() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              filename: file.name,
+              ...metadata,
               storage_path: path,
-              mime_type: file.type,
-              size_bytes: file.size,
               space_id: spaceId,
+              encryption_version: dek ? SPACE_ENCRYPTION_VERSION : undefined,
             }),
             signal: AbortSignal.timeout(METADATA_TIMEOUT_MS),
           });
@@ -183,7 +217,10 @@ export function useBatchFileUpload() {
               .from("space-files")
               .remove([path]);
             if (removeError) {
-              console.error("Failed to roll back orphaned upload", removeError);
+              console.error(
+                "Orphaned upload left for the cleanup sweep",
+                removeError
+              );
             }
           } else {
             results.push({ id, filename: file.name, success: true });
@@ -199,7 +236,10 @@ export function useBatchFileUpload() {
             .from("space-files")
             .remove([path]);
           if (removeError) {
-            console.error("Failed to roll back orphaned upload", removeError);
+            console.error(
+              "Orphaned upload left for the cleanup sweep",
+              removeError
+            );
           }
         }
 

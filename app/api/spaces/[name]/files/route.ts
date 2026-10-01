@@ -8,24 +8,40 @@ import { hasSpaceAccess, SPACE_SECURITY_COLUMNS } from "@/lib/space-authz";
 import { readRateLimiter, uploadRateLimiter } from "@/lib/rate-limit";
 import {
   ALLOWED_MIME_TYPES,
+  MAX_ENCRYPTED_METADATA_LENGTH,
   MAX_FILE_SIZE_BYTES,
   MAX_FILES_PER_SPACE,
   MAX_SPACE_STORAGE_BYTES,
   SIGNED_URL_TTL_SECONDS,
+  SPACE_ENCRYPTION_VERSION,
 } from "@/lib/constants";
 
-const fileMetadataSchema = z.object({
-  filename: z.string().min(1).max(255),
-  storage_path: z.string().min(1),
-  mime_type: z
-    .string()
-    .refine((v) => ALLOWED_MIME_TYPES.includes(v), "File type not allowed"),
-  size_bytes: z
-    .number()
-    .positive()
-    .max(MAX_FILE_SIZE_BYTES, "File too large (max 10MB)"),
-  space_id: z.uuid(),
-});
+const ENCRYPTED_SIZE_SLACK = 64;
+
+const fileMetadataSchema = z
+  .object({
+    filename: z.string().min(1).max(MAX_ENCRYPTED_METADATA_LENGTH),
+    storage_path: z.string().min(1),
+    mime_type: z.string().min(1).max(MAX_ENCRYPTED_METADATA_LENGTH),
+    size_bytes: z
+      .number()
+      .positive()
+      .max(MAX_FILE_SIZE_BYTES + ENCRYPTED_SIZE_SLACK, "File too large (max 10MB)"),
+    space_id: z.uuid(),
+    encryption_version: z.literal(SPACE_ENCRYPTION_VERSION).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.encryption_version) return;
+    if (data.filename.length > 255) {
+      ctx.addIssue({ code: "custom", message: "Filename too long", path: ["filename"] });
+    }
+    if (!ALLOWED_MIME_TYPES.includes(data.mime_type)) {
+      ctx.addIssue({ code: "custom", message: "File type not allowed", path: ["mime_type"] });
+    }
+    if (data.size_bytes > MAX_FILE_SIZE_BYTES) {
+      ctx.addIssue({ code: "custom", message: "File too large (max 10MB)", path: ["size_bytes"] });
+    }
+  });
 
 export async function POST(
   request: Request,
@@ -84,6 +100,13 @@ export async function POST(
     return NextResponse.json({ error: "Space is locked" }, { status: 403 });
   }
 
+  if (Boolean(space.encryption_version) !== Boolean(parsed.data.encryption_version)) {
+    return NextResponse.json(
+      { error: "File encryption does not match this space" },
+      { status: 400 }
+    );
+  }
+
   const { data: existingFiles } = await admin
     .from("files")
     .select("size_bytes")
@@ -113,6 +136,7 @@ export async function POST(
       storage_path: parsed.data.storage_path,
       mime_type: parsed.data.mime_type,
       size_bytes: parsed.data.size_bytes,
+      encryption_version: parsed.data.encryption_version ?? null,
     })
     .select()
     .single();

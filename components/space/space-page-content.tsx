@@ -44,6 +44,23 @@ import {
   type SpaceError,
 } from "@/hooks/use-space";
 import { getClaimForSpace, removeAnonClaim } from "@/lib/anon-claims";
+import { useSpaceKey } from "@/hooks/use-space-key";
+import {
+  deriveSecrets,
+  encryptText,
+  generateDek,
+  generateKdfParams,
+  wrapDek,
+} from "@/lib/crypto/space-crypto";
+import { forgetSpaceKey, getKeySync, rememberKey } from "@/lib/crypto/key-session";
+import {
+  decryptExistingFiles,
+  encryptExistingFiles,
+  type FileRekey,
+  type StoredFile,
+} from "@/lib/crypto/space-convert";
+import { SPACE_ENCRYPTION_VERSION } from "@/lib/constants";
+import type { EncryptionEnvelope } from "@/lib/schemas/space.schema";
 import { useBatchFileUpload, uploadFilesToStorage } from "@/hooks/use-file-upload";
 import { friendlyUploadError } from "@/lib/upload-errors";
 import { createClient } from "@/lib/supabase/client";
@@ -165,10 +182,13 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
   const [confirmEmptyDelete, setConfirmEmptyDelete] = useState(false);
   const [markdownChunkReady, setMarkdownChunkReady] = useState(false);
   const [pendingPrivate, setPendingPrivate] = useState(false);
-  const [pendingPassword, setPendingPassword] = useState<string | null>(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [passwordDialogMode, setPasswordDialogMode] = useState<"set" | "rotate">("set");
   const [unlockError, setUnlockError] = useState<string>();
+  const [pendingEncryption, setPendingEncryption] = useState<EncryptionEnvelope | null>(null);
+  const [visibilityBusyLabel, setVisibilityBusyLabel] = useState<string>();
+  const [passwordDialogError, setPasswordDialogError] = useState<string>();
+  const dek = useSpaceKey(name);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,8 +234,8 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     queryKey: ["files", space?.name ?? name],
     queryFn: async () => {
       const res = await fetch(`/api/spaces/${space?.name ?? name}/files`);
-      if (!res.ok) return [];
-      return res.json() as Promise<{ id: string }[]>;
+      if (!res.ok) return [] as StoredFile[];
+      return res.json() as Promise<StoredFile[]>;
     },
     enabled: Boolean(space),
   });
@@ -227,7 +247,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     setSyncedContent(space.content);
     setSyncedDuration(space.duration);
     setPendingPrivate(space.is_private);
-    setPendingPassword(null);
+    setPendingEncryption(null);
   }
 
   if (is404 && prevSpaceId !== null) {
@@ -237,7 +257,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     setSyncedContent("");
     setSyncedDuration(5);
     setPendingPrivate(false);
-    setPendingPassword(null);
+    setPendingEncryption(null);
   }
 
   useEffect(() => {
@@ -311,48 +331,148 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
 
     if (isNewSpace) {
       setPendingPrivate(false);
-      setPendingPassword(null);
+      setPendingEncryption(null);
+      forgetSpaceKey(name).catch((err) =>
+        console.error("Failed to discard the pending key", err)
+      );
       return;
     }
 
     if (space?.is_private) handleMakePublic();
   }
 
+  async function buildEnvelope(
+    password: string,
+    dekToWrap: CryptoKey
+  ): Promise<EncryptionEnvelope> {
+    const params = generateKdfParams();
+    const { kek, authToken } = await deriveSecrets(password, params);
+    return {
+      version: SPACE_ENCRYPTION_VERSION,
+      kdf_salt: params.salt,
+      kdf_iterations: params.iterations,
+      wrapped_dek: await wrapDek(dekToWrap, kek),
+      auth_token: authToken,
+    };
+  }
+
   async function handleMakePublic() {
     try {
-      await setVisibility.mutateAsync({ is_private: false });
+      if (space?.encryption_version) {
+        const currentDek = getKeySync(name);
+        if (!currentDek) {
+          toast.error("Unlock this space before making it public");
+          return;
+        }
+
+        const files = remoteFiles ?? [];
+        let rekeys: FileRekey[] = [];
+        if (files.length) {
+          setVisibilityBusyLabel(`Decrypting files 0/${files.length}`);
+          rekeys = await decryptExistingFiles(
+            name,
+            files,
+            currentDek,
+            (done, total) =>
+              setVisibilityBusyLabel(`Decrypting files ${done}/${total}`)
+          );
+        }
+
+        setVisibilityBusyLabel("Saving...");
+        await setVisibility.mutateAsync({
+          is_private: false,
+          content,
+          files: rekeys.length ? rekeys : undefined,
+        });
+        await forgetSpaceKey(name);
+      } else {
+        await setVisibility.mutateAsync({ is_private: false });
+      }
       toast.success("Space is now public");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to update visibility";
       toast.error(msg);
+    } finally {
+      setVisibilityBusyLabel(undefined);
     }
   }
 
   async function handleSetPassword(password: string) {
-    if (isNewSpace) {
-      setPendingPrivate(true);
-      setPendingPassword(password);
-      setPasswordDialogOpen(false);
-      toast.success("This space will be private once you save it");
-      return;
-    }
-
+    setPasswordDialogError(undefined);
     try {
-      await setVisibility.mutateAsync({ is_private: true, password });
+      if (isNewSpace) {
+        setVisibilityBusyLabel("Deriving key...");
+        const newDek = await generateDek();
+        const envelope = await buildEnvelope(password, newDek);
+        await rememberKey(name, newDek);
+        setPendingEncryption(envelope);
+        setPendingPrivate(true);
+        setPasswordDialogOpen(false);
+        toast.success("This space will be encrypted once you save it");
+        return;
+      }
+
+      if (space?.encryption_version) {
+        const currentDek = getKeySync(name);
+        if (!currentDek) {
+          setPasswordDialogError("Unlock this space before changing its password");
+          return;
+        }
+        setVisibilityBusyLabel("Deriving key...");
+        const envelope = await buildEnvelope(password, currentDek);
+        await setVisibility.mutateAsync({
+          is_private: true,
+          encryption: envelope,
+        });
+        setPasswordDialogOpen(false);
+        toast.success("Password changed");
+        return;
+      }
+
+      setVisibilityBusyLabel("Deriving key...");
+      const newDek = await generateDek();
+      const envelope = await buildEnvelope(password, newDek);
+
+      const files = remoteFiles ?? [];
+      let rekeys: FileRekey[] = [];
+      if (files.length) {
+        setVisibilityBusyLabel(`Encrypting files 0/${files.length}`);
+        rekeys = await encryptExistingFiles(name, files, newDek, (done, total) =>
+          setVisibilityBusyLabel(`Encrypting files ${done}/${total}`)
+        );
+      }
+
+      setVisibilityBusyLabel("Saving...");
+      const ciphertext = await encryptText(newDek, content);
+      await rememberKey(name, newDek);
+      await setVisibility.mutateAsync({
+        is_private: true,
+        encryption: envelope,
+        content: ciphertext,
+        files: rekeys.length ? rekeys : undefined,
+      });
       setPasswordDialogOpen(false);
       toast.success(
-        passwordDialogMode === "rotate" ? "Password changed" : "Space is now private"
+        space?.is_private
+          ? "Password changed and this space is now encrypted"
+          : "Space is now private and encrypted"
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to set password";
+      setPasswordDialogError(msg);
       toast.error(msg);
+    } finally {
+      setVisibilityBusyLabel(undefined);
     }
   }
 
   async function handleUnlock(password: string) {
     setUnlockError(undefined);
     try {
-      await unlockSpace.mutateAsync(password);
+      await unlockSpace.mutateAsync({
+        password,
+        encryption: spaceError?.encryption,
+      });
     } catch (err) {
       setUnlockError(err instanceof Error ? err.message : "Incorrect password");
     }
@@ -511,8 +631,21 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
       let savedSpace = space;
 
       if (isNewSpace) {
-        let filesMeta: { filename: string; storage_path: string; mime_type: string; size_bytes: number }[] | undefined;
+        let filesMeta:
+          | {
+              filename: string;
+              storage_path: string;
+              mime_type: string;
+              size_bytes: number;
+              encryption_version?: number;
+            }[]
+          | undefined;
         let uploadedPaths: string[] = [];
+        const newSpaceDek = pendingEncryption ? getKeySync(name) : null;
+
+        if (pendingEncryption && !newSpaceDek) {
+          throw new Error("Encryption key was lost — set the password again");
+        }
 
         if (pendingFiles.length > 0) {
           attemptedFileCount = pendingFiles.length;
@@ -521,30 +654,34 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
           const storageResults = await uploadFilesToStorage(
             pendingFiles.map((p) => ({ id: p.id, file: p.file })),
             name,
-            (completed, total) => setStorageProgress({ completed, total })
+            (completed, total) => setStorageProgress({ completed, total }),
+            newSpaceDek
           );
           for (const r of storageResults) {
             if (!r.success && r.error) failedFileErrors.set(r.id, r.error);
           }
           const succeeded = storageResults.filter((r) => r.success);
           uploadedPaths = succeeded.map((r) => r.storage_path);
-          filesMeta = succeeded.map(({ filename, storage_path, mime_type, size_bytes }) => ({
-            filename,
-            storage_path,
-            mime_type,
-            size_bytes,
-          }));
+          filesMeta = succeeded.map(
+            ({ filename, storage_path, mime_type, size_bytes, encryption_version }) => ({
+              filename,
+              storage_path,
+              mime_type,
+              size_bytes,
+              encryption_version,
+            })
+          );
         }
 
         let created;
         try {
           created = await createSpace.mutateAsync({
             name,
-            content,
+            content: newSpaceDek ? await encryptText(newSpaceDek, content) : content,
             duration,
             files: filesMeta,
             is_private: pendingPrivate,
-            password: pendingPassword ?? undefined,
+            encryption: pendingEncryption ?? undefined,
           });
         } catch (err) {
           if (uploadedPaths.length) {
@@ -559,7 +696,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
           throw err;
         }
         savedSpace = created;
-        queryClient.setQueryData(["space", name], created);
+        queryClient.setQueryData(["space", name], { ...created, content });
 
         if (pendingFiles.length > 0) {
           await queryClient.invalidateQueries({ queryKey: ["files", created.name] });
@@ -583,6 +720,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
             items: pendingFiles.map((p) => ({ id: p.id, file: p.file })),
             spaceName: savedSpace.name,
             spaceId: savedSpace.id,
+            dek: space?.encryption_version ? dek : null,
           });
 
           for (const r of results) {
@@ -836,7 +974,10 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
                       showLockState={Boolean(user && space)}
                       canSetVisibility={canSetVisibility}
                       canToggleLock={canToggleLock && Boolean(space)}
-                      visibilityPending={setVisibility.isPending}
+                      visibilityPending={
+                        setVisibility.isPending || Boolean(visibilityBusyLabel)
+                      }
+                      busyLabel={passwordDialogOpen ? undefined : visibilityBusyLabel}
                       lockPending={toggleLock.isPending}
                       onVisibilityChange={handleVisibilityChange}
                       onToggleLock={handleToggleLock}
@@ -1204,14 +1345,21 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
         onSubmit={handleUnlock}
         error={unlockError}
         loading={unlockSpace.isPending}
+        encrypted={Boolean(spaceError?.encryption)}
+        ownerView={Boolean(spaceError?.encryption?.wrapped_dek)}
       />
 
       <SetPasswordDialog
         open={passwordDialogOpen}
         mode={passwordDialogMode}
         onSubmit={handleSetPassword}
-        onCancel={() => setPasswordDialogOpen(false)}
-        loading={setVisibility.isPending}
+        onCancel={() => {
+          setPasswordDialogError(undefined);
+          setPasswordDialogOpen(false);
+        }}
+        error={passwordDialogError}
+        loading={setVisibility.isPending || Boolean(visibilityBusyLabel)}
+        busyLabel={visibilityBusyLabel}
       />
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>

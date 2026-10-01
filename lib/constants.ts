@@ -38,12 +38,18 @@ export const SPACE_NAME_MAX = 24;
 
 export const MAX_ANON_DURATION_MINUTES = 1440;
 export const GLOBAL_ANON_SPACE_CAP = 1000;
-export const SIGNED_URL_TTL_SECONDS = 3600;
+export const SIGNED_URL_TTL_SECONDS = 300;
 export const ORPHAN_GRACE_MS = 60 * 60 * 1000;
 
-export const MIN_SPACE_PASSWORD_LENGTH = 6;
+export const MIN_SPACE_PASSWORD_LENGTH = 12;
 export const MAX_SPACE_PASSWORD_LENGTH = 128;
 export const SPACE_ACCESS_TTL_SECONDS = 12 * 60 * 60;
+
+export const SPACE_ENCRYPTION_VERSION = 1;
+export const PBKDF2_ITERATIONS = 1_200_000;
+export const MAX_ENCRYPTED_CONTENT_LENGTH = 280_000;
+export const MAX_ENCRYPTED_METADATA_LENGTH = 2048;
+export const ENCRYPTED_MIME_TYPE = "application/octet-stream";
 
 export const ALLOWED_MIME_TYPES = [
   "image/jpeg",

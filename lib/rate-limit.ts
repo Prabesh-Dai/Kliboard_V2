@@ -45,3 +45,7 @@ export const claimRateLimiter = isDev
 export const passwordAttemptRateLimiter = isDev
   ? noopLimiter
   : new Ratelimit({ redis: getRedis(), limiter: Ratelimit.slidingWindow(10, "15 m"), prefix: "rl:space-pw" });
+
+export const spacePasswordRateLimiter = isDev
+  ? noopLimiter
+  : new Ratelimit({ redis: getRedis(), limiter: Ratelimit.slidingWindow(30, "15 m"), prefix: "rl:space-pw-all" });

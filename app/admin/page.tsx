@@ -350,7 +350,9 @@ export default function AdminPage() {
                           })}
                         </p>
                         <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
-                          {space.content || "(empty)"}
+                          {space.encryption_version
+                            ? "Encrypted"
+                            : space.content || "(empty)"}
                         </p>
                       </div>
                       <div className="shrink-0">
