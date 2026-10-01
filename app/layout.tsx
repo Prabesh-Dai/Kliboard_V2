@@ -6,6 +6,7 @@ import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ServiceWorkerRegister } from "@/components/layout/service-worker-register";
+import { SPLASH_SCREENS } from "@/lib/brand/splash-screens";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const spaceGrotesk = Space_Grotesk({
@@ -50,20 +51,11 @@ export const metadata: Metadata = {
     siteName: "Kliboard",
     type: "website",
     locale: "en_US",
-    images: [
-      {
-        url: "/opengraph-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Kliboard — Temporary Text Clipboard",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
-    images: ["/opengraph-image.png"],
   },
   robots: {
     index: true,
@@ -73,10 +65,22 @@ export const metadata: Metadata = {
       follow: true,
     },
   },
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
+  // Next only emits `mobile-web-app-capable`; iOS needs the Apple tag to show startup images
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
   appleWebApp: {
     capable: true,
     title: "Kliboard",
     statusBarStyle: "black-translucent",
+    startupImage: SPLASH_SCREENS.map(({ file, media }) => ({ url: `/splash/${file}`, media })),
   },
   verification: process.env.GOOGLE_SITE_VERIFICATION
     ? { google: process.env.GOOGLE_SITE_VERIFICATION }

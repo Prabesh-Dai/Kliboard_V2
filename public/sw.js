@@ -1,4 +1,4 @@
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `kliboard-static-${VERSION}`;
 const RUNTIME_CACHE = `kliboard-runtime-${VERSION}`;
 const OFFLINE_URL = "/offline";
@@ -6,10 +6,10 @@ const OFFLINE_URL = "/offline";
 const PRECACHE_URLS = [
   OFFLINE_URL,
   "/manifest.webmanifest",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/icon-maskable-512.png",
-  "/apple-touch-icon.png",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+  "/icons/apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -36,8 +36,7 @@ self.addEventListener("activate", (event) => {
 function isStaticAsset(url) {
   return (
     url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/icon-") ||
-    url.pathname === "/apple-touch-icon.png" ||
+    url.pathname.startsWith("/icons/") ||
     url.pathname === "/manifest.webmanifest" ||
     /\.(woff2?|ttf|otf|png|jpg|jpeg|svg|webp|ico|css|js)$/i.test(url.pathname)
   );

@@ -11,7 +11,7 @@ const graph = {
       url: siteUrl,
       logo: {
         "@type": "ImageObject",
-        url: `${siteUrl}/icon-512.png`,
+        url: `${siteUrl}/icons/icon-512.png`,
         width: 512,
         height: 512,
       },

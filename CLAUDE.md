@@ -38,6 +38,7 @@ components/
 hooks/                # TanStack Query hooks (use-space, use-auth, use-file-upload)
 stores/               # Zustand stores (theme, notifications)
 lib/
+  brand/              # Icon tile, wordmark, splash device list, vendored brand fonts (next/og)
   supabase/           # Browser + server Supabase clients, middleware helper
   schemas/            # Zod validation schemas (shared client + server)
   types/              # Auto-generated Supabase database types
@@ -72,6 +73,10 @@ Treat this file as living documentation. When the user shares a notable rule, co
 - **Dark mode first.** Use Tailwind `dark:` variant, system detection as default
 - **Design system:** "The Architectural Shadow" — see `design/DESIGN.md` for full spec. Key rules: no 1px borders for sectioning (use tonal background shifts), no #FFFFFF, no glow/scanline effects, minimum `sm` (0.125rem) border-radius, ambient shadows only
 - **Fonts:** Space Grotesk for headings (`font-heading`), Inter for body/UI (`font-sans`), JetBrains Mono for space content textarea (`font-mono`)
+- **Brand assets are code, not PNGs.** Icons (`/icons/*`), iOS splash screens (`/splash/*`) and `opengraph-image.tsx` render at build via `next/og` from `lib/brand/`. Brand identity (Gloock wordmark, Nunito Sans tagline, cream `#FEFED5` + teal `#35D0BA` on charcoal; source `design/brand.png`) is for these assets only — the app UI keeps its sage palette and fonts
+- **Icon shadows use `filter: blur()` layers, not stacked glyph copies.** Satori clips blurred layers to the tile; `textShadow` leaks outside it, and stacking hundreds of copies cost ~100s of build time
+- **Lucide in `next/og`:** lucide-react components call hooks Satori can't run. Import `__iconNode` from `lucide-react/dist/esm/icons/<name>.js` and render it with `LucideIcon` from `lib/brand/lucide-icon.tsx`
+- **Bump `VERSION` in `public/sw.js`** when precached assets (icons, offline page) change, or installed PWAs keep the old ones
 - **Toast notifications:** Use Sonner (shadcn/ui integration), not custom components
 - **Icons:** Use Lucide React, not hand-rolled SVGs
 - **Loading states:** Use shadcn/ui Skeleton components, not "Loading..." text
