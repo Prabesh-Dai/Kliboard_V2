@@ -75,6 +75,7 @@ Treat this file as living documentation. When the user shares a notable rule, co
 - **Fonts:** Space Grotesk for headings (`font-heading`), Inter for body/UI (`font-sans`), JetBrains Mono for space content textarea (`font-mono`)
 - **Brand assets are code, not PNGs.** Icons (`/icons/*`), iOS splash screens (`/splash/*`) and `opengraph-image.tsx` render at build via `next/og` from `lib/brand/`. Brand identity (Gloock wordmark, Nunito Sans tagline, cream `#FEFED5` + teal `#35D0BA` on charcoal; source `design/brand.png`) is for these assets only — the app UI keeps its sage palette and fonts
 - **Icon shadows use `filter: blur()` layers, not stacked glyph copies.** Satori clips blurred layers to the tile; `textShadow` leaks outside it, and stacking hundreds of copies cost ~100s of build time
+- **On large `next/og` canvases, pre-render filtered elements on their own small canvas** and embed them as a PNG `<img>`. Satori/resvg applies `blur()`/`boxShadow` across the full canvas, not the element: the iPad splash tile took ~4s per image and broke Vercel's 60s static-generation timeout (see `app/splash/[file]/route.tsx`)
 - **Lucide in `next/og`:** lucide-react components call hooks Satori can't run. Import `__iconNode` from `lucide-react/dist/esm/icons/<name>.js` and render it with `LucideIcon` from `lib/brand/lucide-icon.tsx`
 - **Bump `VERSION` in `public/sw.js`** when precached assets (icons, offline page) change, or installed PWAs keep the old ones
 - **Toast notifications:** Use Sonner (shadcn/ui integration), not custom components
