@@ -7,9 +7,15 @@ const BCRYPT_ROUNDS = 10;
 
 const DUMMY_HASH = "$2b$10$7NmvWlcZ2Nyhw5pztassG.wbG3fENd1UR3cCKZO1mW/2T3taOkhy6";
 
+const MIN_SECRET_LENGTH = 32;
+
+export function isSpaceAccessConfigured(): boolean {
+  return (process.env.SPACE_ACCESS_SECRET?.length ?? 0) >= MIN_SECRET_LENGTH;
+}
+
 function getSecret(): string {
   const secret = process.env.SPACE_ACCESS_SECRET;
-  if (!secret || secret.length < 32) {
+  if (!secret || secret.length < MIN_SECRET_LENGTH) {
     throw new Error(
       "SPACE_ACCESS_SECRET is missing or too short (needs >= 32 characters)"
     );

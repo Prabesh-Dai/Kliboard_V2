@@ -22,15 +22,26 @@ export type SpaceError = Error & {
   requiresPassword?: boolean;
 };
 
+export async function toSpaceError(res: Response, fallback: string): Promise<SpaceError> {
+  const data = await res.json().catch((parseError: unknown) => {
+    console.error("Non-JSON error response", res.status, parseError);
+    return {};
+  });
+  const error = new Error(
+    typeof data.error === "string" && data.error ? data.error : fallback
+  ) as SpaceError;
+  error.status = res.status;
+  error.requiresPassword = Boolean(data.requires_password);
+  return error;
+}
+
+export function isAccessLost(err: unknown): boolean {
+  return Boolean((err as SpaceError | null)?.requiresPassword);
+}
+
 async function fetchSpace(name: string): Promise<Space> {
   const res = await fetch(`/api/spaces/${name}`);
-  if (!res.ok) {
-    const data = await res.json();
-    const error = new Error(data.error ?? res.statusText) as SpaceError;
-    error.status = res.status;
-    error.requiresPassword = Boolean(data.requires_password);
-    throw error;
-  }
+  if (!res.ok) throw await toSpaceError(res, "Couldn't load this space");
   return res.json();
 }
 
@@ -64,10 +75,7 @@ export function useUnlockSpace(name: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error ?? res.statusText);
-      }
+      if (!res.ok) throw await toSpaceError(res, "Couldn't open this space. Try again.");
       return res.json() as Promise<{ granted: boolean }>;
     },
     onSuccess: () => {
@@ -89,10 +97,7 @@ export function useSetSpaceVisibility(name: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error ?? res.statusText);
-      }
+      if (!res.ok) throw await toSpaceError(res, "Couldn't update visibility");
       return res.json() as Promise<Space>;
     },
     onSuccess: (data) => {
@@ -121,14 +126,7 @@ export function useCreateSpace() {
         body: JSON.stringify(data),
         signal: AbortSignal.timeout(30_000),
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        const err = new Error(errorData.error ?? res.statusText) as Error & {
-          status: number;
-        };
-        err.status = res.status;
-        throw err;
-      }
+      if (!res.ok) throw await toSpaceError(res, "Couldn't create this space");
       return res.json() as Promise<Space & { claim_token?: string }>;
     },
     onSuccess: (data) => {
@@ -152,16 +150,18 @@ export function useUpdateSpace(name: string) {
         body: JSON.stringify(data),
         signal: AbortSignal.timeout(30_000),
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error ?? res.statusText);
-      }
+      if (!res.ok) throw await toSpaceError(res, "Couldn't save");
       return res.json();
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["space", name], data);
       queryClient.invalidateQueries({ queryKey: ["dashboard-spaces"] });
       queryClient.invalidateQueries({ queryKey: ["recent-spaces"] });
+    },
+    onError: (err) => {
+      if (isAccessLost(err)) {
+        queryClient.invalidateQueries({ queryKey: ["space", name] });
+      }
     },
   });
 }
@@ -172,10 +172,7 @@ export function useToggleLock(name: string) {
   return useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/spaces/${name}/lock`, { method: "PATCH" });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error ?? res.statusText);
-      }
+      if (!res.ok) throw await toSpaceError(res, "Couldn't change the lock");
       return res.json();
     },
     onSuccess: (data) => {
@@ -190,10 +187,7 @@ export function useDeleteSpace() {
   return useMutation({
     mutationFn: async (name: string) => {
       const res = await fetch(`/api/spaces/${name}`, { method: "DELETE" });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error ?? res.statusText);
-      }
+      if (!res.ok) throw await toSpaceError(res, "Couldn't delete this space");
       return res.json();
     },
     onSuccess: () => {
@@ -210,10 +204,7 @@ export function useRecentSpaces() {
     queryKey: ["recent-spaces"],
     queryFn: async () => {
       const res = await fetch("/api/spaces/recent");
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error ?? res.statusText);
-      }
+      if (!res.ok) throw await toSpaceError(res, "Couldn't load recent spaces");
       return res.json() as Promise<RecentSpace[]>;
     },
   });
@@ -224,10 +215,7 @@ export function useAllRecentSpaces(enabled: boolean) {
     queryKey: ["recent-spaces", "all"],
     queryFn: async () => {
       const res = await fetch("/api/spaces/recent?limit=100");
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error ?? res.statusText);
-      }
+      if (!res.ok) throw await toSpaceError(res, "Couldn't load recent spaces");
       return res.json() as Promise<RecentSpace[]>;
     },
     enabled,

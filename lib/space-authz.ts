@@ -16,11 +16,9 @@ export const SPACE_SECURITY_COLUMNS =
 
 export async function hasSpaceAccess(
   space: AccessSubject,
-  userId: string | null,
-  userIsAdmin = false
+  userId: string | null
 ): Promise<boolean> {
   if (!space.is_private) return true;
-  if (userIsAdmin) return true;
   if (userId && space.owner_id === userId) return true;
 
   const store = await cookies();

@@ -70,9 +70,7 @@ export async function POST(
     return NextResponse.json({ error: "Space not found" }, { status: 404 });
   }
 
-  const userIsAdmin = await isAdmin(user.id);
-
-  if (!(await hasSpaceAccess(space, user.id, userIsAdmin))) {
+  if (!(await hasSpaceAccess(space, user.id))) {
     return NextResponse.json(
       { error: "Password required", requires_password: true },
       { status: 403 }
@@ -80,7 +78,7 @@ export async function POST(
   }
 
   const isOwner = space.owner_id === user.id;
-  if (space.is_locked && !isOwner && !userIsAdmin) {
+  if (space.is_locked && !isOwner && !(await isAdmin(user.id))) {
     return NextResponse.json({ error: "Space is locked" }, { status: 403 });
   }
 
@@ -153,9 +151,7 @@ export async function GET(
     return NextResponse.json({ error: "Space not found" }, { status: 404 });
   }
 
-  const userIsAdmin = user ? await isAdmin(user.id) : false;
-
-  if (!(await hasSpaceAccess(space, user?.id ?? null, userIsAdmin))) {
+  if (!(await hasSpaceAccess(space, user?.id ?? null))) {
     return NextResponse.json(
       { error: "Password required", requires_password: true },
       { status: 403 }

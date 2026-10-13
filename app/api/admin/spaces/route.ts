@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   let query = admin
     .from("spaces")
-    .select("id, name, content, duration, expires_at, owner_id, is_locked, created_at, updated_at", { count: "exact" })
+    .select("id, name, content, duration, expires_at, owner_id, is_locked, is_private, created_at, updated_at", { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -56,6 +56,7 @@ export async function GET(request: Request) {
 
   const enriched = spaces.map((space) => ({
     ...space,
+    content: space.is_private ? "" : space.content,
     owner_email: space.owner_id ? emailMap.get(space.owner_id) ?? null : null,
   }));
 

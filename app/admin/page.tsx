@@ -350,7 +350,7 @@ export default function AdminPage() {
                           })}
                         </p>
                         <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
-                          {space.content || "(empty)"}
+                          {space.is_private ? "(private)" : space.content || "(empty)"}
                         </p>
                       </div>
                       <div className="shrink-0">

@@ -60,7 +60,7 @@ export async function GET(
     return NextResponse.json({ error: "Space expired" }, { status: 404 });
   }
 
-  if (!(await hasSpaceAccess(space, user?.id ?? null, userIsAdmin))) {
+  if (!(await hasSpaceAccess(space, user?.id ?? null))) {
     return NextResponse.json(
       { error: "Password required", requires_password: true, name: space.name },
       { status: 403 }
@@ -116,7 +116,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (!(await hasSpaceAccess(space, user.id, userIsAdmin))) {
+  if (!(await hasSpaceAccess(space, user.id))) {
     return NextResponse.json(
       { error: "Password required", requires_password: true, name: space.name },
       { status: 403 }

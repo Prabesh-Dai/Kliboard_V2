@@ -44,6 +44,7 @@ export const ORPHAN_GRACE_MS = 60 * 60 * 1000;
 export const MIN_SPACE_PASSWORD_LENGTH = 6;
 export const MAX_SPACE_PASSWORD_LENGTH = 128;
 export const SPACE_ACCESS_TTL_SECONDS = 12 * 60 * 60;
+export const PRIVATE_SPACES_UNAVAILABLE = "Private spaces are unavailable right now. Try again later.";
 
 export const ALLOWED_MIME_TYPES = [
   "image/jpeg",

@@ -80,6 +80,7 @@ Treat this file as living documentation. When the user shares a notable rule, co
 - **Bump `VERSION` in `public/sw.js`** when precached assets (icons, offline page) change, or installed PWAs keep the old ones
 - **Copy reads human, not AI.** No em dashes anywhere user-facing (UI, toasts, metadata/OG). Short plain sentences, sentence case, no marketing triplets ("no signup, no tracking"), no "instantly"/"seamlessly"
 - **Dialogs: one obvious next step.** Minimal text, single primary action, close via X/Esc. Inputs inside dialogs need `bg-surface-container-low` (dialog surface is `-high`, same as the default input). Password fields use `PasswordInput` (show/hide toggle, no confirm field)
+- **Never show `res.statusText` to users.** It's empty over HTTP/2 (Vercel), which made failures silent. Build fetch errors with `toSpaceError(res, fallback)` from `hooks/use-space.ts`
 - **Toast notifications:** Use Sonner (shadcn/ui integration), not custom components
 - **Icons:** Use Lucide React, not hand-rolled SVGs
 - **Loading states:** Use shadcn/ui Skeleton components, not "Loading..." text
@@ -89,7 +90,9 @@ Treat this file as living documentation. When the user shares a notable rule, co
 - **File uploads** go directly from client to Supabase Storage (bypasses Vercel 4.5MB limit)
 - **Auth is optional.** All space CRUD works without login
 - **Two independent gates per space.** `is_private` gates *reading*, `is_locked` gates *writing*. Don't conflate them
-- **Private spaces** are password-shared: owner sets a password (bcrypt in `password_hash`), readers POST it to `/api/spaces/[name]/access` and get an HttpOnly access-grant cookie. The grant HMAC is bound to `password_hash`, so rotating or clearing the password revokes every outstanding grant. Requires `SPACE_ACCESS_SECRET` (≥32 chars); the helpers fail closed without it
+- **Private spaces** are password-shared: owner sets a password (bcrypt in `password_hash`), readers POST it to `/api/spaces/[name]/access` and get an HttpOnly access-grant cookie. The grant HMAC is bound to `password_hash`, so rotating or clearing the password revokes every outstanding grant. Requires `SPACE_ACCESS_SECRET` (≥32 chars) in every Vercel environment, not just `.env.local`; routes check `isSpaceAccessConfigured()` and refuse to unlock or make spaces private without it
+- **No superadmin bypass on private spaces.** Only the owner or a password-holder can read/write; superadmins can still delete (DELETE route, admin bulk delete) but never see private content (admin list blanks it) and can't change visibility
+- **A 403 with `requires_password` from any space call invalidates the space query** so an open tab drops to the password gate after a password change
 - **Authorize private spaces in the route, not via RLS.** Password-holders aren't authenticated as the owner, so RLS can't see them — routes read the space with the admin client and call `hasSpaceAccess()` from `lib/space-authz.ts`. Gate every read/write path that touches space content or files
 - **Never return `password_hash` or `claim_token_hash`** in an API response; destructure them out
 - **Space names:** letters and hyphens, 3-24 chars, start/end with letter, lowercase on server

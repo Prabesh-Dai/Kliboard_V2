@@ -41,6 +41,7 @@ import {
   useDeleteSpace,
   useUnlockSpace,
   useSetSpaceVisibility,
+  isAccessLost,
   type SpaceError,
 } from "@/hooks/use-space";
 import { getClaimForSpace, removeAnonClaim } from "@/lib/anon-claims";
@@ -299,8 +300,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
   const canDeleteSpace = isOwner || Boolean(isAdminMode) || Boolean(space?.is_admin);
 
   const isPrivate = isNewSpace ? pendingPrivate : Boolean(space?.is_private);
-  const canSetVisibility =
-    Boolean(user) && (isNewSpace || isOwner || Boolean(isAdminMode));
+  const canSetVisibility = Boolean(user) && (isNewSpace || isOwner);
 
   function handleVisibilityChange(next: boolean) {
     if (next) {
@@ -631,6 +631,10 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
         await refetch();
         return;
       }
+      if (isAccessLost(err)) {
+        toast.error("Enter the password again to keep editing");
+        return;
+      }
       const friendly = friendlyUploadError(err);
       if (attemptedFileCount > 0) {
         const allErrors = new Map<string, string>();
@@ -646,7 +650,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
         );
         toast.error(`Save failed. ${friendly}`);
       } else {
-        toast.error(friendly);
+        toast.error(status === 403 && err instanceof Error ? err.message : friendly);
       }
     } finally {
       window.removeEventListener("offline", handleOffline);

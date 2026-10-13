@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyUploadError } from "@/lib/upload-errors";
+import { isAccessLost, toSpaceError } from "@/hooks/use-space";
 
 const MAX_CONCURRENT = 3;
 const UPLOAD_TIMEOUT_MS = 60_000;
@@ -122,6 +123,7 @@ export function useBatchFileUpload() {
       spaceId: string;
     }) => {
       const results: UploadResult[] = [];
+      let accessLost = false;
       setProgress({ completed: 0, total: items.length });
 
       const queue = [...items];
@@ -170,6 +172,7 @@ export function useBatchFileUpload() {
             try {
               const errorData = await res.json();
               serverMessage = errorData?.error ?? "";
+              if (errorData?.requires_password) accessLost = true;
             } catch {
               serverMessage = "";
             }
@@ -229,6 +232,9 @@ export function useBatchFileUpload() {
       }
 
       await processQueue();
+      if (accessLost) {
+        queryClient.invalidateQueries({ queryKey: ["space"] });
+      }
       return results;
     },
     onSuccess: (_data, variables) => {
@@ -246,17 +252,21 @@ export function useBatchFileUpload() {
 }
 
 export function useSpaceFiles(spaceName: string) {
+  const queryClient = useQueryClient();
+
   return {
     deleteFile: useMutation({
       mutationFn: async (fileId: string) => {
         const res = await fetch(`/api/spaces/${spaceName}/files/${fileId}`, {
           method: "DELETE",
         });
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error ?? "Failed to delete file");
-        }
+        if (!res.ok) throw await toSpaceError(res, "Failed to delete file");
         return res.json();
+      },
+      onError: (err) => {
+        if (isAccessLost(err)) {
+          queryClient.invalidateQueries({ queryKey: ["space"] });
+        }
       },
     }),
   };

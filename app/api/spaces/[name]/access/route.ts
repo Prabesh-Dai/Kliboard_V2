@@ -6,9 +6,11 @@ import { passwordAttemptRateLimiter } from "@/lib/rate-limit";
 import {
   accessCookieName,
   burnPasswordComparison,
+  isSpaceAccessConfigured,
   mintAccessGrant,
   verifySpacePassword,
 } from "@/lib/space-access";
+import { PRIVATE_SPACES_UNAVAILABLE } from "@/lib/constants";
 
 const INVALID = { error: "Incorrect password" };
 
@@ -16,6 +18,11 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
+  if (!isSpaceAccessConfigured()) {
+    console.error("SPACE_ACCESS_SECRET is missing or too short; cannot grant access");
+    return NextResponse.json({ error: PRIVATE_SPACES_UNAVAILABLE }, { status: 503 });
+  }
+
   const [{ name }, headerList] = await Promise.all([params, headers()]);
   const normalizedName = name.toLowerCase();
   const ip = headerList.get("x-forwarded-for") ?? "anonymous";

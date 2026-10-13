@@ -4,8 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { setVisibilitySchema } from "@/lib/schemas/space.schema";
 import { updateRateLimiter } from "@/lib/rate-limit";
-import { isAdmin } from "@/lib/admin";
-import { accessCookieName, hashSpacePassword } from "@/lib/space-access";
+import {
+  accessCookieName,
+  hashSpacePassword,
+  isSpaceAccessConfigured,
+} from "@/lib/space-access";
+import { PRIVATE_SPACES_UNAVAILABLE } from "@/lib/constants";
 
 export async function PATCH(
   request: Request,
@@ -60,16 +64,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const userIsAdmin = await isAdmin(user.id);
-  if (space.owner_id !== user.id && !userIsAdmin) {
+  if (space.owner_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (parsed.data.is_private && !space.owner_id) {
-    return NextResponse.json(
-      { error: "Claim this space before making it private" },
-      { status: 403 }
-    );
+  if (parsed.data.is_private && !isSpaceAccessConfigured()) {
+    console.error("SPACE_ACCESS_SECRET is missing or too short; refusing to make space private");
+    return NextResponse.json({ error: PRIVATE_SPACES_UNAVAILABLE }, { status: 503 });
   }
 
   const { data, error } = await admin

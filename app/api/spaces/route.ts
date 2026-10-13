@@ -5,12 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeRateLimiter, anonCreateRateLimiter } from "@/lib/rate-limit";
 import { generateClaimToken, hashClaimToken } from "@/lib/claim-token";
-import { hashSpacePassword } from "@/lib/space-access";
+import { hashSpacePassword, isSpaceAccessConfigured } from "@/lib/space-access";
 import { addMinutes } from "date-fns";
 import {
   GLOBAL_ANON_SPACE_CAP,
   MAX_ANON_DURATION_MINUTES,
   MAX_SPACE_STORAGE_BYTES,
+  PRIVATE_SPACES_UNAVAILABLE,
 } from "@/lib/constants";
 
 async function removeStorage(paths: string[]) {
@@ -78,6 +79,11 @@ export async function POST(request: Request) {
       { error: "Sign in to create a private space" },
       { status: 403 }
     );
+  }
+
+  if (is_private && !isSpaceAccessConfigured()) {
+    console.error("SPACE_ACCESS_SECRET is missing or too short; refusing to create private space");
+    return NextResponse.json({ error: PRIVATE_SPACES_UNAVAILABLE }, { status: 503 });
   }
 
   if (!user && duration > MAX_ANON_DURATION_MINUTES) {
