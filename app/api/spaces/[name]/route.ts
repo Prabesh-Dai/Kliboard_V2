@@ -7,7 +7,12 @@ import { updateSpaceSchema } from "@/lib/schemas/space.schema";
 import { readRateLimiter, updateRateLimiter } from "@/lib/rate-limit";
 import { isAdmin } from "@/lib/admin";
 import { hasSpaceAccess } from "@/lib/space-authz";
-import { MAX_ANON_DURATION_MINUTES } from "@/lib/constants";
+import {
+  isContentEncryptionConfigured,
+  readableContent,
+  storedContent,
+} from "@/lib/content-crypto";
+import { MAX_ANON_DURATION_MINUTES, PRIVATE_SPACES_UNAVAILABLE } from "@/lib/constants";
 
 export async function GET(
   request: Request,
@@ -67,8 +72,16 @@ export async function GET(
     );
   }
 
+  let content: string;
+  try {
+    content = readableContent(space);
+  } catch (err) {
+    console.error("Failed to decrypt space content", { space: space.name, err });
+    return NextResponse.json({ error: "Couldn't read this space" }, { status: 500 });
+  }
+
   const { password_hash: _, claim_token_hash: __, ...safeSpace } = space;
-  return NextResponse.json({ ...safeSpace, is_admin: userIsAdmin });
+  return NextResponse.json({ ...safeSpace, content, is_admin: userIsAdmin });
 }
 
 export async function PATCH(
@@ -136,7 +149,11 @@ export async function PATCH(
     expires_at?: string;
   } = {};
   if (parsed.data.content !== undefined) {
-    updateData.content = parsed.data.content;
+    if (space.is_private && !isContentEncryptionConfigured()) {
+      console.error("SPACE_CONTENT_KEY is not configured; refusing to save private space");
+      return NextResponse.json({ error: PRIVATE_SPACES_UNAVAILABLE }, { status: 503 });
+    }
+    updateData.content = storedContent(parsed.data.content, space.is_private);
   }
   if (parsed.data.duration !== undefined) {
     if (parsed.data.duration === 0 && !userIsAdmin) {
@@ -162,16 +179,29 @@ export async function PATCH(
   const { data, error } = await admin
     .from("spaces")
     .update(updateData)
-    .eq("name", name.toLowerCase())
+    .eq("id", space.id)
+    .eq("is_private", space.is_private)
     .select()
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (error) {
+    return NextResponse.json({ error: "Couldn't save" }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: "Space changed. Try again" }, { status: 409 });
+  }
+
+  let content: string;
+  try {
+    content = parsed.data.content ?? readableContent(data);
+  } catch (err) {
+    console.error("Failed to decrypt space content", { space: data.name, err });
+    return NextResponse.json({ error: "Couldn't read this space" }, { status: 500 });
   }
 
   const { password_hash: _, claim_token_hash: __, ...safeSpace } = data;
-  return NextResponse.json(safeSpace);
+  return NextResponse.json({ ...safeSpace, content });
 }
 
 export async function DELETE(

@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { writeRateLimiter, anonCreateRateLimiter } from "@/lib/rate-limit";
 import { generateClaimToken, hashClaimToken } from "@/lib/claim-token";
 import { hashSpacePassword, isSpaceAccessConfigured } from "@/lib/space-access";
+import { isContentEncryptionConfigured, storedContent } from "@/lib/content-crypto";
 import { addMinutes } from "date-fns";
 import {
   GLOBAL_ANON_SPACE_CAP,
@@ -81,8 +82,8 @@ export async function POST(request: Request) {
     );
   }
 
-  if (is_private && !isSpaceAccessConfigured()) {
-    console.error("SPACE_ACCESS_SECRET is missing or too short; refusing to create private space");
+  if (is_private && (!isSpaceAccessConfigured() || !isContentEncryptionConfigured())) {
+    console.error("SPACE_ACCESS_SECRET or SPACE_CONTENT_KEY is not configured; refusing to create private space");
     return NextResponse.json({ error: PRIVATE_SPACES_UNAVAILABLE }, { status: 503 });
   }
 
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
 
   const insertPayload = {
     name: normalizedName,
-    content,
+    content: storedContent(content, is_private),
     duration,
     expires_at: expiresAt,
     is_locked: true,
@@ -207,7 +208,7 @@ export async function POST(request: Request) {
         claim_token_hash: _retryHash,
         password_hash: _retryPassword,
         ...safeRetry
-      } = retryData;
+      } = { ...retryData, content };
       return NextResponse.json(
         claimToken ? { ...safeRetry, claim_token: claimToken } : safeRetry,
         { status: 201 }
@@ -220,7 +221,7 @@ export async function POST(request: Request) {
     await insertFiles(data.id, files);
   }
 
-  const { claim_token_hash: _hash, password_hash: _password, ...safeData } = data;
+  const { claim_token_hash: _hash, password_hash: _password, ...safeData } = { ...data, content };
   return NextResponse.json(
     claimToken ? { ...safeData, claim_token: claimToken } : safeData,
     { status: 201 }

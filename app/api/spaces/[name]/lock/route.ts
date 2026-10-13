@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { readableContent } from "@/lib/content-crypto";
 
 export async function PATCH(
   _request: Request,
@@ -40,6 +41,14 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update lock state" }, { status: 500 });
   }
 
+  let content: string;
+  try {
+    content = readableContent(data);
+  } catch (err) {
+    console.error("Failed to decrypt space content", { space: data.name, err });
+    return NextResponse.json({ error: "Couldn't read this space" }, { status: 500 });
+  }
+
   const { password_hash: _, claim_token_hash: __, ...safeSpace } = data;
-  return NextResponse.json(safeSpace);
+  return NextResponse.json({ ...safeSpace, content });
 }

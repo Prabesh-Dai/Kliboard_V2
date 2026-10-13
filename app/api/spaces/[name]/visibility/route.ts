@@ -9,6 +9,11 @@ import {
   hashSpacePassword,
   isSpaceAccessConfigured,
 } from "@/lib/space-access";
+import {
+  isContentEncryptionConfigured,
+  readableContent,
+  storedContent,
+} from "@/lib/content-crypto";
 import { PRIVATE_SPACES_UNAVAILABLE } from "@/lib/constants";
 
 export async function PATCH(
@@ -56,7 +61,7 @@ export async function PATCH(
   const admin = createAdminClient();
   const { data: space } = await admin
     .from("spaces")
-    .select("id, name, owner_id")
+    .select("id, name, owner_id, content, is_private")
     .eq("name", name.toLowerCase())
     .single();
 
@@ -68,9 +73,20 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (parsed.data.is_private && !isSpaceAccessConfigured()) {
-    console.error("SPACE_ACCESS_SECRET is missing or too short; refusing to make space private");
+  if (
+    parsed.data.is_private &&
+    (!isSpaceAccessConfigured() || !isContentEncryptionConfigured())
+  ) {
+    console.error("SPACE_ACCESS_SECRET or SPACE_CONTENT_KEY is not configured; refusing to make space private");
     return NextResponse.json({ error: PRIVATE_SPACES_UNAVAILABLE }, { status: 503 });
+  }
+
+  let plaintext: string;
+  try {
+    plaintext = readableContent(space);
+  } catch (err) {
+    console.error("Failed to decrypt space content", { space: space.name, err });
+    return NextResponse.json({ error: "Couldn't read this space" }, { status: 500 });
   }
 
   const { data, error } = await admin
@@ -80,20 +96,26 @@ export async function PATCH(
       password_hash: parsed.data.is_private
         ? await hashSpacePassword(parsed.data.password)
         : null,
+      content: storedContent(plaintext, parsed.data.is_private),
     })
     .eq("id", space.id)
+    .eq("content", space.content)
     .select()
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
     return NextResponse.json(
       { error: "Failed to update visibility" },
       { status: 500 }
     );
   }
 
+  if (!data) {
+    return NextResponse.json({ error: "Space changed. Try again" }, { status: 409 });
+  }
+
   const { password_hash: _, claim_token_hash: __, ...safeSpace } = data;
-  const response = NextResponse.json(safeSpace);
+  const response = NextResponse.json({ ...safeSpace, content: plaintext });
 
   response.cookies.set(accessCookieName(space.name), "", {
     httpOnly: true,

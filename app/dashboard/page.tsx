@@ -196,9 +196,11 @@ export default function DashboardPage() {
                           <Badge variant="destructive">Expired</Badge>
                         )}
                       </div>
-                      <p className="mt-1.5 truncate font-mono text-sm text-muted-foreground">
-                        {space.content}
-                      </p>
+                      {!space.is_private && (
+                        <p className="mt-1.5 truncate font-mono text-sm text-muted-foreground">
+                          {space.content}
+                        </p>
+                      )}
                       <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="size-3" />
                         {expired

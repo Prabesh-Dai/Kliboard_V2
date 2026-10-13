@@ -629,6 +629,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
       const status = (err as Error & { status?: number }).status;
       if (status === 409) {
         await refetch();
+        if (!isNewSpace && err instanceof Error) toast.error(err.message);
         return;
       }
       if (isAccessLost(err)) {
