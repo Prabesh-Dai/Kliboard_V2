@@ -27,7 +27,7 @@ const graph = {
       url: siteUrl,
       name: "Kliboard",
       description:
-        "Temporary text clipboard. Create a named space, paste text or files, share the link, and let it auto-delete.",
+        "Paste text or files into a named space and share the link. It deletes itself when time's up. No account needed.",
       publisher: { "@id": `${siteUrl}/#organization` },
       potentialAction: {
         "@type": "SearchAction",
@@ -47,7 +47,7 @@ const graph = {
       operatingSystem: "Web",
       browserRequirements: "Requires JavaScript and a modern browser.",
       description:
-        "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.",
+        "Paste text or files into a named space and share the link. It deletes itself when time's up. No account needed.",
       publisher: { "@id": `${siteUrl}/#organization` },
       offers: {
         "@type": "Offer",

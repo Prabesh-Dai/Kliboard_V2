@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Kliboard",
     short_name: "Kliboard",
     description:
-      "Temporary text clipboard. Create, share, and auto-expire — no signup required.",
+      "Temporary clipboard for text and files.",
     start_url: "/",
     scope: "/",
     display: "standalone",

@@ -121,8 +121,8 @@ function hasMarkdown(text: string): boolean {
 
 function describeFileFailures(failedErrors: Map<string, string>): string {
   const reasons = Array.from(new Set(failedErrors.values()));
-  if (reasons.length === 1) return reasons[0].toLowerCase();
-  return "see the file list for details";
+  if (reasons.length === 1) return reasons[0];
+  return "See the file list for details";
 }
 
 interface SpacePageContentProps {
@@ -333,7 +333,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
       setPendingPrivate(true);
       setPendingPassword(password);
       setPasswordDialogOpen(false);
-      toast.success("This space will be private once you save it");
+      toast.success("Private once you save");
       return;
     }
 
@@ -450,7 +450,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     }
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      toast.error("Popup blocked — allow popups to download as PDF");
+      toast.error("Popup blocked. Allow popups to download the PDF");
       return;
     }
     const title = space?.name ?? decodeURIComponent(name);
@@ -483,14 +483,14 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
 
   async function executeSave() {
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
-      const offlineMsg = "You're offline — check your connection and try again";
+      const offlineMsg = "You're offline. Check your connection";
       if (pendingFiles.length > 0) {
         const offlineErrors = new Map<string, string>();
         for (const p of pendingFiles) offlineErrors.set(p.id, offlineMsg);
         setPendingFiles((prev) =>
           prev.map((p) => ({ ...p, error: offlineMsg, exiting: false }))
         );
-        toast.warning(`Can't save — ${offlineMsg.toLowerCase()}`);
+        toast.warning("Can't save while you're offline");
       } else {
         toast.error(offlineMsg);
       }
@@ -504,7 +504,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
     const handleOffline = () => {
       if (warnedOfflineMidSave) return;
       warnedOfflineMidSave = true;
-      toast.warning("Connection lost — waiting to resume");
+      toast.warning("Connection lost. Waiting to reconnect");
     };
     window.addEventListener("offline", handleOffline);
     try {
@@ -618,11 +618,11 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
         toast.success(`Space saved ${dateInfo}`);
       } else if (failedCount === attemptedFileCount) {
         toast.warning(
-          `Space saved, but no files were uploaded — ${describeFileFailures(failedFileErrors)}`
+          `Space saved, but no files were uploaded. ${describeFileFailures(failedFileErrors)}`
         );
       } else {
         toast.warning(
-          `Space saved, but ${failedCount} of ${attemptedFileCount} file${attemptedFileCount !== 1 ? "s" : ""} couldn't upload — ${describeFileFailures(failedFileErrors)}`
+          `Space saved, but ${failedCount} of ${attemptedFileCount} file${attemptedFileCount !== 1 ? "s" : ""} couldn't upload. ${describeFileFailures(failedFileErrors)}`
         );
       }
     } catch (err) {
@@ -644,7 +644,7 @@ export function SpacePageContent({ name, isAdmin: isAdminMode }: SpacePageConten
             exiting: false,
           }))
         );
-        toast.error(`Save failed — ${friendly.toLowerCase()}`);
+        toast.error(`Save failed. ${friendly}`);
       } else {
         toast.error(friendly);
       }

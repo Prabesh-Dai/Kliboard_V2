@@ -3,9 +3,9 @@ import { HomeHero } from "@/components/shared/home-hero";
 import { HomeStructuredData } from "@/components/shared/structured-data";
 
 export const metadata: Metadata = {
-  title: "Kliboard: Temporary Text Clipboard with Auto-Expiring Notes",
+  title: { absolute: "Kliboard: temporary online clipboard" },
   description:
-    "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration. No signup, no tracking.",
+    "Paste text or files into a named space and share the link. It deletes itself when time's up. No account needed.",
 };
 
 export default function Home() {
@@ -13,7 +13,7 @@ export default function Home() {
     <>
       <HomeStructuredData />
       <h1 className="sr-only">
-        Kliboard: Temporary Text Clipboard with Auto-Expiring Notes
+        Kliboard: temporary online clipboard
       </h1>
       <HomeHero />
     </>

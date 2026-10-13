@@ -77,6 +77,8 @@ Treat this file as living documentation. When the user shares a notable rule, co
 - **Icon shadows use `filter: blur()` layers, not stacked glyph copies.** Satori clips blurred layers to the tile; `textShadow` leaks outside it, and stacking hundreds of copies cost ~100s of build time
 - **Lucide in `next/og`:** lucide-react components call hooks Satori can't run. Import `__iconNode` from `lucide-react/dist/esm/icons/<name>.js` and render it with `LucideIcon` from `lib/brand/lucide-icon.tsx`
 - **Bump `VERSION` in `public/sw.js`** when precached assets (icons, offline page) change, or installed PWAs keep the old ones
+- **Copy reads human, not AI.** No em dashes anywhere user-facing (UI, toasts, metadata/OG). Short plain sentences, sentence case, no marketing triplets ("no signup, no tracking"), no "instantly"/"seamlessly"
+- **Dialogs: one obvious next step.** Minimal text, single primary action, close via X/Esc. Inputs inside dialogs need `bg-surface-container-low` (dialog surface is `-high`, same as the default input). Password fields use `PasswordInput` (show/hide toggle, no confirm field)
 - **Toast notifications:** Use Sonner (shadcn/ui integration), not custom components
 - **Icons:** Use Lucide React, not hand-rolled SVGs
 - **Loading states:** Use shadcn/ui Skeleton components, not "Loading..." text

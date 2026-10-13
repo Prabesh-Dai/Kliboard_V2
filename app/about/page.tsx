@@ -5,13 +5,13 @@ import { ExternalLink, ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Kliboard is a free temporary online clipboard — paste text or files into a named space and share the link, no signup required. Learn what it is and how it works.",
+    "Kliboard is a free temporary online clipboard. Paste text or files into a named space and share the link. No account needed.",
 };
 
 const faqs = [
   {
     q: "What is Kliboard?",
-    a: "Kliboard is a free temporary online clipboard. You create a named space, paste text or files into it, and share the link — no account needed. Each space deletes itself automatically after the duration you choose.",
+    a: "Kliboard is a free temporary online clipboard. You create a named space, paste text or files into it, and share the link. No account needed. Each space deletes itself automatically after the duration you choose.",
   },
   {
     q: "What is an online clipboard?",
@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     q: "How long does a space last, and is it private?",
-    a: "You choose how long a space lives — from 5 minutes up to about 10 days — and it deletes itself when the time is up. You can also lock a space with a password so only people you share it with can open it.",
+    a: "You choose how long a space lives, from 5 minutes up to 10 days, and it deletes itself when the time is up. You can also make a space private with a password, so only people you give it to can open it.",
   },
 ];
 

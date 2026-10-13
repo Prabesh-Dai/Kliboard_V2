@@ -10,9 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { KeyRound, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { PasswordInput } from "@/components/shared/password-input";
 
 interface SpacePasswordDialogProps {
   open: boolean;
@@ -38,34 +37,27 @@ export function SpacePasswordDialog({
 
   return (
     <Dialog open={open} modal={true}>
-      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+      <DialogContent className="sm:max-w-sm" showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <KeyRound className="size-5" />
-            Password Required
-          </DialogTitle>
-          <DialogDescription>
-            <span className="font-medium text-foreground">{spaceName}</span> is a
-            private space. Enter its password to view the contents.
-          </DialogDescription>
+          <DialogTitle className="truncate">{spaceName}</DialogTitle>
+          <DialogDescription>This space is private.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="space-password">Password</Label>
-            <Input
-              id="space-password"
-              type="password"
+          <div className="space-y-1.5">
+            <PasswordInput
+              aria-label="Password"
+              aria-invalid={Boolean(error)}
               autoComplete="current-password"
-              placeholder="Enter space password"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
             />
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
-          <Button type="submit" className="w-full" disabled={!password || loading}>
+          <Button type="submit" className="h-10 w-full" disabled={!password || loading}>
             {loading && <Loader2 className="size-3.5 animate-spin" />}
-            {loading ? "Verifying..." : "Unlock"}
+            {loading ? "Opening..." : "Open"}
           </Button>
         </form>
         <NextLink

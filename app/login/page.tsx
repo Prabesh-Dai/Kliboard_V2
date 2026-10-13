@@ -43,7 +43,7 @@ export default function LoginPage() {
       <Card className="relative w-full max-w-md">
         <CardHeader>
           <CardTitle className="font-heading text-3xl font-semibold tracking-tight">
-            Sign In <span className="text-base font-normal text-muted-foreground/60">— manage your spaces</span>
+            Sign in <span className="text-base font-normal text-muted-foreground/60">to manage your spaces</span>
           </CardTitle>
         </CardHeader>
         <CardContent>

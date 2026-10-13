@@ -21,9 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.kliboard.online";
-const siteTitle = "Kliboard — Temporary Text Clipboard, Auto-Expiring Notes";
+const siteTitle = "Kliboard: temporary online clipboard";
 const siteDescription =
-  "Create a named space, paste any text or files, and share the link instantly. Everything auto-deletes after your chosen duration — no signup, no tracking.";
+  "Paste text or files into a named space and share the link. It deletes itself when time's up. No account needed.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

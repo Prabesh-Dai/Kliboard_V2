@@ -14,10 +14,10 @@ export function friendlyUploadError(err: unknown): string {
     "onLine" in navigator &&
     navigator.onLine === false
   ) {
-    return "You're offline — check your connection and try again";
+    return "You're offline. Check your connection";
   }
   if (name === "TimeoutError" || lower.includes("timeout") || lower.includes("timed out")) {
-    return "Request timed out — please try again";
+    return "Request timed out. Try again";
   }
   if (name === "AbortError") {
     return "Request was cancelled";
@@ -28,13 +28,13 @@ export function friendlyUploadError(err: unknown): string {
     lower.includes("network request failed") ||
     lower.includes("load failed")
   ) {
-    return "Network error — check your connection and try again";
+    return "Network error. Check your connection";
   }
   if (status === 413 || lower.includes("payload too large") || lower.includes("too large")) {
     return "File is too large to upload";
   }
   if (status === 401 || lower.includes("jwt") || lower.includes("unauthorized")) {
-    return "Session expired — please refresh and try again";
+    return "Session expired. Refresh the page";
   }
   if (
     status === 403 ||
@@ -48,10 +48,10 @@ export function friendlyUploadError(err: unknown): string {
     return "A file with this name already exists";
   }
   if (status === 429 || lower.includes("rate limit") || lower.includes("too many")) {
-    return "Too many uploads — please wait and try again";
+    return "Too many uploads. Wait a moment";
   }
   if (status && status >= 500) {
-    return "Server error — please try again";
+    return "Server error. Try again";
   }
 
   return message || "Upload failed";
