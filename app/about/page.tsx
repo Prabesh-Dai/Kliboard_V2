@@ -48,17 +48,17 @@ const projects = [
   {
     name: "Game spec checker",
     description: "Check whether your machine meets a game's requirements.",
-    href: "https://do-i-need-to-upgrade.vercel.app/",
+    href: "https://doineedtoupgrade.com/",
   },
   {
     name: "Kliboard v1",
     description: "The original prototype that this app grew out of.",
-    href: "https://bababubudev.github.io/Kliboard/",
+    href: "https://prabesh-dai.github.io/Kliboard/",
   },
   {
     name: "Advanced calculator",
     description: "A calculator with a few more tricks than the default.",
-    href: "https://calculab.pareki.xyz/",
+    href: "https://calculab.vercel.app/",
   },
   {
     name: "STACKD",
